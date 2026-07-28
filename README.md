@@ -8,6 +8,16 @@
 
 📊 **[전체 리포트 보기 → REPORT.md](REPORT.md)**
 
+## 🚀 배포된 결과물
+
+각 모델이 만든 앱을 직접 열어볼 수 있습니다.
+
+| 모델 | 배포 URL | 상태 |
+|---|---|---|
+| `gpt-5.6-sol` | **https://space3d-sol.vercel.app** | ✅ 정상 |
+| `claude-opus-5` | https://space3d-opus5.vercel.app | ⚠️ 창 높이에 따라 3D 씬 소실 (창을 세로로 키우면 정상) |
+| `grok-4.5` | https://space3d-grok45.vercel.app | ⚠️ 렌즈플레어 고스트로 화면 대부분 가려짐 |
+
 ## 결과 요약
 
 | 모델 | 시간 | 총 토큰 | 자동검증 | 실제 렌더링 | 품질 |
