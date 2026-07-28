@@ -1,10 +1,9 @@
 {
   "title": "코딩 에이전트 벤치마크 — Space3D",
   "format": "C 실험 리포트",
-  "length": "12분",
+  "length": "13분",
   "reveal": "인트로 선공개",
   "tone": "담담하게",
-
   "titles": [
     "AI 4개에 똑같은 앱을 시켰더니 3개가 깨졌습니다",
     "테스트는 전부 만점, 그런데 열어보니 2개만 됩니다",
@@ -16,225 +15,690 @@
     "text": "테스트 만점 → 2개만 작동",
     "bg": "종합 표 슬라이드(자동검증 열 전부 10/10, 실제 화면 열에 파손 3개) 스크린샷"
   },
-
   "slides": [
     {
-      "kind": "cover", "act": "Intro", "at": "[00:00–00:16]",
+      "kind": "cover",
+      "act": "Intro",
+      "at": "[00:00–00:16]",
       "eyebrow": "실측 리포트 · 2026-07",
       "headline": "AI 4개에게<br><em>똑같은 앱</em>을 만들라고 했습니다",
-      "blocks": [{"type": "kw", "content": ["Opus 5", "Fable 5", "GPT-5.6 Sol", "Grok 4.5"]}],
+      "blocks": [
+        {
+          "type": "kw",
+          "content": [
+            "Opus 5",
+            "Fable 5",
+            "GPT-5.6 Sol",
+            "Grok 4.5"
+          ]
+        }
+      ],
       "on_screen": "제목 + 모델 4개 이름",
       "narration": "AI 코딩 도구 네 개한테 완전히 똑같은 주문서를 주고 각각 앱을 만들게 했습니다. Opus 5, Fable 5, GPT-5.6 Sol, 그리고 Grok 4.5입니다. 총 다섯 번 돌렸습니다.\n\n이 영상에서는 얼마나 걸렸는지, 돈이 얼마나 들었는지, 그리고 만든 게 진짜로 돌아가는지를 순서대로 보겠습니다."
     },
     {
-      "kind": "body", "act": "Intro", "at": "[00:16–00:50]",
+      "kind": "body",
+      "act": "Intro",
+      "at": "[00:16–00:50]",
       "eyebrow": "무엇을 만들게 했나",
       "headline": "웹에서 도는 <em>3D 태양계</em>",
       "blocks": [
-        {"type": "shots", "content": {"cols": 1, "items": [
-          {"src": "screenshots/fable5.jpg", "label": "어린이 교육용 · 브라우저에서 실행", "alt": "태양계 시뮬레이터 화면"}]}},
-        {"type": "kw", "content": ["오늘 날짜의 진짜 별 위치", "하루씩 넘기기", "지구에서 보는 달 모양"]}
+        {
+          "type": "shots",
+          "content": {
+            "cols": 1,
+            "items": [
+              {
+                "src": "screenshots/fable5.jpg",
+                "label": "어린이 교육용 · 브라우저에서 실행",
+                "alt": "태양계 시뮬레이터 화면"
+              }
+            ]
+          }
+        },
+        {
+          "type": "kw",
+          "content": [
+            "오늘 날짜의 진짜 별 위치",
+            "하루씩 넘기기",
+            "지구에서 보는 달 모양"
+          ]
+        }
       ],
       "on_screen": "완성 화면 1장 + 핵심 기능 3개",
       "narration": "만들라고 한 건 이겁니다. 브라우저에서 도는 3D 태양계예요. 초등학생 교육용이라는 조건을 줬습니다.\n\n핵심은 세 가지입니다. 첫째, 오늘 날짜 기준으로 행성들이 실제 하늘에 있는 그 위치에 있어야 합니다. 둘째, 날짜를 하루씩 앞뒤로 넘기면 바로 반영돼야 하고요. 셋째, 지금 지구에서 달을 보면 어떤 모양인지를 따로 보여줘야 합니다.\n\n그냥 예쁘게 만드는 게 아니라 계산이 맞아야 하는 과제입니다."
     },
     {
-      "kind": "body", "act": "Intro", "at": "[00:50–01:30]",
+      "kind": "body",
+      "act": "Intro",
+      "at": "[00:50–01:30]",
       "eyebrow": "먼저 결과부터",
       "headline": "직접 열어보실 수 있습니다",
-      "blocks": [{"type": "links", "content": [
-        {"label": "GPT-5.6 Sol", "url": "https://space3d-sol.vercel.app", "state": "정상", "cls": "ok"},
-        {"label": "Claude Fable 5", "url": "https://space3d-fable5.vercel.app", "state": "정상", "cls": "ok"},
-        {"label": "Claude Opus 5", "url": "https://space3d-opus5.vercel.app", "state": "깨짐", "cls": "bad"},
-        {"label": "Grok 4.5", "url": "https://space3d-grok45.vercel.app", "state": "깨짐", "cls": "bad"}
-      ]}],
+      "blocks": [
+        {
+          "type": "links",
+          "content": [
+            {
+              "label": "GPT-5.6 Sol",
+              "url": "https://space3d-sol.vercel.app",
+              "state": "정상",
+              "cls": "ok"
+            },
+            {
+              "label": "Claude Fable 5",
+              "url": "https://space3d-fable5.vercel.app",
+              "state": "정상",
+              "cls": "ok"
+            },
+            {
+              "label": "Claude Opus 5",
+              "url": "https://space3d-opus5.vercel.app",
+              "state": "깨짐",
+              "cls": "bad"
+            },
+            {
+              "label": "Grok 4.5",
+              "url": "https://space3d-grok45.vercel.app",
+              "state": "깨짐",
+              "cls": "bad"
+            }
+          ]
+        }
+      ],
       "on_screen": "배포 URL 4개 (클릭 가능) + 정상/깨짐 표시",
       "narration": "먼저 결과부터 보겠습니다. 네 개 다 인터넷에 올려놨으니까 지금 바로 열어보실 수 있습니다. 링크는 설명란에도 넣어뒀습니다.\n\n오른쪽에 정상, 깨짐이라고 적어놨죠. 위의 두 개는 열면 제대로 나오고, 아래 두 개는 화면이 깨집니다.\n\n지금 하나씩 열어보겠습니다."
     },
     {
-      "kind": "statement", "act": "Intro", "at": "[01:30–02:00]",
+      "kind": "statement",
+      "act": "Intro",
+      "at": "[01:30–02:00]",
       "eyebrow": "이상한 점",
       "headline": "그런데 <em>자동 시험은 전부 만점</em>이었습니다",
-      "blocks": [{"type": "facts", "content": [["자동 시험", "5개 전부 만점"], ["실제로 작동", "2개"]]}],
+      "blocks": [
+        {
+          "type": "facts",
+          "content": [
+            [
+              "자동 시험",
+              "5개 전부 만점"
+            ],
+            [
+              "실제로 작동",
+              "2개"
+            ]
+          ]
+        }
+      ],
       "on_screen": "만점 vs 2개 대비",
       "narration": "여기서 이상한 게 있습니다.\n\n제가 자동으로 채점하는 시험을 열 개 만들어놨거든요. 코드가 제대로 빌드되는지, 계산이 맞는지, 서버가 응답하는지. 다섯 번 실행이 전부 만점을 받았습니다.\n\n그런데 실제로 열어보면 세 개가 깨져 있습니다. 시험은 만점인데 화면은 안 나오는 거죠.\n\n왜 이런 일이 생기는지가 오늘의 핵심입니다."
     },
-
     {
-      "kind": "body", "act": "설계", "at": "[02:00–02:44]",
+      "kind": "body",
+      "act": "설계",
+      "at": "[02:00–02:44]",
       "eyebrow": "공정하게 겨루려면",
       "headline": "조건을 <em>똑같이</em> 맞췄습니다",
-      "blocks": [{"type": "kw", "content": ["한 번에 하나씩 실행", "내 개인 설정 끄기", "성능 설정 최고로 통일", "각자 빈 폴더에서 시작"]}],
+      "blocks": [
+        {
+          "type": "kw",
+          "content": [
+            "한 번에 하나씩 실행",
+            "내 개인 설정 끄기",
+            "성능 설정 최고로 통일",
+            "각자 빈 폴더에서 시작"
+          ]
+        }
+      ],
       "on_screen": "공정성 조건 4개",
       "narration": "비교가 성립하려면 조건부터 똑같이 맞춰야 합니다.\n\n동시에 돌리면 컴퓨터 자원을 나눠 쓰니까 한 번에 하나씩 돌렸습니다. 제 개인 설정이 특정 모델한테만 유리하게 작용하지 않도록 그것도 껐고요. 성능 설정은 전부 최고로 통일했습니다.\n\n그리고 각자 완전히 빈 폴더에서 시작하게 했습니다. 서로의 결과물을 볼 수 없습니다."
     },
     {
-      "kind": "body", "act": "설계", "at": "[02:44–03:30]",
+      "kind": "body",
+      "act": "설계",
+      "at": "[02:44–03:30]",
       "eyebrow": "채점 기준",
       "headline": "\"그럴듯해 보인다\"는<br>점수가 <em>아닙니다</em>",
       "blocks": [
-        {"type": "kw", "content": ["보름달 주기 29.53일", "지구가 하루에 도는 각도", "행성 8개 공전 주기"]},
-        {"type": "facts", "content": [["자동 시험", "10개"]]}
+        {
+          "type": "kw",
+          "content": [
+            "보름달 주기 29.53일",
+            "지구가 하루에 도는 각도",
+            "행성 8개 공전 주기"
+          ]
+        },
+        {
+          "type": "facts",
+          "content": [
+            [
+              "자동 시험",
+              "10개"
+            ]
+          ]
+        }
       ],
       "on_screen": "검사 항목 3개",
       "narration": "채점 기준도 미리 못 박았습니다.\n\n달 모양이 그럴듯해 보이는지가 아니라, 계산이 실제로 맞는지를 재야 합니다. 그래서 검사 스크립트를 넣었어요. 보름달에서 다음 보름달까지가 29.53일로 나오는지, 지구가 하루에 도는 각도가 맞는지, 행성 여덟 개의 공전 주기가 실제 값과 맞는지.\n\n전부 천문학에서 정해진 값이라 제가 답을 지어낼 수가 없습니다.\n\n여기에 빌드랑 서버 응답까지 합쳐서 시험 열 개를 만들었습니다."
     },
-
     {
-      "kind": "body", "act": "결과", "at": "[03:30–04:16]",
+      "kind": "body",
+      "act": "결과",
+      "at": "[03:30–04:16]",
       "eyebrow": "결과 · 시간",
       "headline": "얼마나 걸렸나",
-      "blocks": [{"type": "bars", "content": {
-        "rows": [["grok-4.5", 10.3, "10.3분"], ["gpt-5.6-sol", 26.8, "26.8분"], ["claude-fable-5", 32.9, "32.9분"], ["opus-5 (2회차)", 35.7, "35.7분"], ["opus-5 (1회차)", 120.0, "120.0분"]],
-        "accent": ["opus-5 (1회차)"]}}],
+      "blocks": [
+        {
+          "type": "bars",
+          "content": {
+            "rows": [
+              [
+                "grok-4.5",
+                10.3,
+                "10.3분"
+              ],
+              [
+                "gpt-5.6-sol",
+                26.8,
+                "26.8분"
+              ],
+              [
+                "claude-fable-5",
+                32.9,
+                "32.9분"
+              ],
+              [
+                "opus-5 (2회차)",
+                35.7,
+                "35.7분"
+              ],
+              [
+                "opus-5 (1회차)",
+                120.0,
+                "120.0분"
+              ]
+            ],
+            "accent": [
+              "opus-5 (1회차)"
+            ]
+          }
+        }
+      ],
       "on_screen": "시간 막대 차트",
       "narration": "먼저 시간입니다.\n\nGrok이 10분으로 압도적으로 빨랐습니다. Sol이 27분, Fable이 33분이고요.\n\n그런데 맨 아래 Opus 5 첫 실행이 120분입니다. 다른 것들의 서너 배죠.\n\n이 숫자, 그대로 믿으면 안 됩니다."
     },
     {
-      "kind": "statement", "act": "결과", "at": "[04:16–04:56]",
+      "kind": "statement",
+      "act": "결과",
+      "at": "[04:16–04:56]",
       "eyebrow": "숫자를 의심해야 할 때",
       "headline": "120분은 <em>서버 장애</em>였습니다",
-      "blocks": [{"type": "facts", "content": [["서버 과부하 응답", "6번"], ["다시 시도", "8번"], ["나중에 재실행", "35.7분"]]}],
+      "blocks": [
+        {
+          "type": "facts",
+          "content": [
+            [
+              "서버 과부하 응답",
+              "6번"
+            ],
+            [
+              "다시 시도",
+              "8번"
+            ],
+            [
+              "나중에 재실행",
+              "35.7분"
+            ]
+          ]
+        }
+      ],
       "on_screen": "장애 횟수 + 재실행 시간",
       "narration": "로그를 뜯어보니까, 서버가 지금 바쁘다는 응답을 여섯 번 받고 다시 시도만 여덟 번 하다가 연결이 끊겼습니다. 두 번 다 제한 시간에 걸려서 강제 종료된 거고요.\n\n그래서 서버가 정상으로 돌아온 다음에 같은 모델을 완전히 새로 다시 돌려봤습니다. 35.7분, 한 번에, 문제없이 끝났습니다.\n\n120분은 모델이 느린 게 아니라 그날 서버 상태였습니다. 이걸 구분 안 하면 실력이 아니라 운을 재는 겁니다."
     },
     {
-      "kind": "body", "act": "결과", "at": "[04:56–05:44]",
+      "kind": "body",
+      "act": "결과",
+      "at": "[04:56–05:44]",
       "eyebrow": "결과 · 사용량",
       "headline": "숫자가 커 보이는 건<br><em>같은 걸 다시 읽어서</em>입니다",
-      "blocks": [{"type": "bars", "content": {
-        "rows": [["grok-4.5", 12.7, "12.7%"], ["gpt-5.6-sol", 5.6, "5.6%"], ["opus-5 (2회차)", 5.4, "5.4%"], ["claude-fable-5", 4.0, "4.0%"], ["opus-5 (1회차)", 1.9, "1.9%"]],
-        "accent": ["opus-5 (1회차)"]}}],
+      "blocks": [
+        {
+          "type": "bars",
+          "content": {
+            "rows": [
+              [
+                "grok-4.5",
+                12.7,
+                "12.7%"
+              ],
+              [
+                "gpt-5.6-sol",
+                5.6,
+                "5.6%"
+              ],
+              [
+                "opus-5 (2회차)",
+                5.4,
+                "5.4%"
+              ],
+              [
+                "claude-fable-5",
+                4.0,
+                "4.0%"
+              ],
+              [
+                "opus-5 (1회차)",
+                1.9,
+                "1.9%"
+              ]
+            ],
+            "accent": [
+              "opus-5 (1회차)"
+            ]
+          }
+        }
+      ],
       "on_screen": "새로 처리한 비율 막대",
       "narration": "다음은 사용량입니다. 여기 함정이 하나 있어요.\n\nAI는 대화를 이어갈 때 앞에 나눈 내용을 매번 다시 읽습니다. 그게 사용량에 전부 잡히거든요.\n\n이 막대는 전체 사용량 중에서, 다시 읽은 게 아니라 새로 처리한 부분의 비율입니다.\n\n맨 아래 Opus 첫 실행을 보시면 1.9퍼센트예요. 나머지 98퍼센트는 같은 내용을 계속 다시 읽은 겁니다. 대화를 153번 주고받았거든요."
     },
     {
-      "kind": "body", "act": "결과", "at": "[05:44–06:26]",
+      "kind": "body",
+      "act": "결과",
+      "at": "[05:44–06:26]",
       "eyebrow": "결과 · 사용량",
       "headline": "새로 처리한 양으로 보면",
       "blocks": [
-        {"type": "bars", "content": {
-          "rows": [["grok-4.5", 131492, "13만"], ["gpt-5.6-sol", 256181, "26만"], ["claude-fable-5", 301485, "30만"], ["opus-5 (2회차)", 366268, "37만"], ["opus-5 (1회차)", 611136, "61만"]]}},
-        {"type": "facts", "content": [["전체로 보면", "31배 차이"], ["새로 처리한 양", "4.6배 차이"]]}
+        {
+          "type": "bars",
+          "content": {
+            "rows": [
+              [
+                "grok-4.5",
+                131492,
+                "13만"
+              ],
+              [
+                "gpt-5.6-sol",
+                256181,
+                "26만"
+              ],
+              [
+                "claude-fable-5",
+                301485,
+                "30만"
+              ],
+              [
+                "opus-5 (2회차)",
+                366268,
+                "37만"
+              ],
+              [
+                "opus-5 (1회차)",
+                611136,
+                "61만"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "facts",
+          "content": [
+            [
+              "전체로 보면",
+              "31배 차이"
+            ],
+            [
+              "새로 처리한 양",
+              "4.6배 차이"
+            ]
+          ]
+        }
       ],
       "on_screen": "새로 처리한 토큰 + 31배 vs 4.6배",
       "narration": "다시 읽은 걸 빼고 실제로 새로 처리한 양만 보면 이렇습니다.\n\nGrok이 13만, Sol이 26만, Opus 첫 실행이 61만입니다.\n\n전체 숫자로 보면 Opus가 Grok의 31배를 쓴 것처럼 보이는데, 새로 처리한 양으로 보면 4.6배예요. 같은 데이터인데 어느 쪽을 보느냐에 따라 결론이 일곱 배 달라집니다.\n\n그래서 전체 사용량으로 순위를 매기면 안 됩니다."
     },
     {
-      "kind": "body", "act": "결과", "at": "[06:26–07:10]",
+      "kind": "body",
+      "act": "결과",
+      "at": "[06:26–07:10]",
       "eyebrow": "결과 · 종합",
       "headline": "여기까지 성적표",
-      "blocks": [{"type": "table", "content": {
-        "cols": ["모델", "시간", "새로 처리", "비용", "자동 시험"],
-        "rows": [
-          ["grok-4.5", "10.3분", "13만", "$0.73", "<span class='ok'>만점</span>"],
-          ["gpt-5.6-sol", "26.8분", "26만", "$5.00", "<span class='ok'>만점</span>"],
-          ["claude-fable-5", "32.9분", "30만", "$17.18", "<span class='ok'>만점</span>"],
-          ["opus-5 (2회차)", "35.7분", "37만", "$9.56", "<span class='ok'>만점</span>"],
-          ["opus-5 (1회차)", "120.0분", "61만", "$25.52", "<span class='ok'>만점</span>"]
-        ]}}],
+      "blocks": [
+        {
+          "type": "table",
+          "content": {
+            "cols": [
+              "모델",
+              "시간",
+              "새로 처리",
+              "비용",
+              "자동 시험"
+            ],
+            "rows": [
+              [
+                "grok-4.5",
+                "10.3분",
+                "13만",
+                "$0.73",
+                "<span class='ok'>만점</span>"
+              ],
+              [
+                "gpt-5.6-sol",
+                "26.8분",
+                "26만",
+                "$5.00",
+                "<span class='ok'>만점</span>"
+              ],
+              [
+                "claude-fable-5",
+                "32.9분",
+                "30만",
+                "$17.18",
+                "<span class='ok'>만점</span>"
+              ],
+              [
+                "opus-5 (2회차)",
+                "35.7분",
+                "37만",
+                "$9.56",
+                "<span class='ok'>만점</span>"
+              ],
+              [
+                "opus-5 (1회차)",
+                "120.0분",
+                "61만",
+                "$25.52",
+                "<span class='ok'>만점</span>"
+              ]
+            ]
+          }
+        }
+      ],
       "on_screen": "종합 표 — 자동 시험 열 전부 만점",
       "narration": "여기까지 정리하면 이렇습니다.\n\n속도도 Grok, 사용량도 Grok, 비용도 Grok이 가장 적습니다.\n\n그리고 맨 오른쪽 열을 보세요. 자동 시험이 다섯 개 전부 만점입니다.\n\n숫자만 보면 여기서 끝내도 되는 리포트예요. 그런데 안 끝납니다."
     },
     {
-      "kind": "statement", "act": "결과", "at": "[07:10–07:44]",
+      "kind": "statement",
+      "act": "결과",
+      "at": "[07:10–07:44]",
       "eyebrow": "비용에 대해",
       "headline": "이 비용은 <em>실제로 낸 돈이 아닙니다</em>",
-      "blocks": [{"type": "kw", "content": ["전부 구독 계정으로 실행", "실제 추가 결제 0원", "종량제로 썼다면 나왔을 값"]}],
+      "blocks": [
+        {
+          "type": "kw",
+          "content": [
+            "전부 구독 계정으로 실행",
+            "실제 추가 결제 0원",
+            "종량제로 썼다면 나왔을 값"
+          ]
+        }
+      ],
       "on_screen": "비용 관련 3줄",
       "narration": "비용 열은 짚고 넘어가야 합니다.\n\n이건 제가 실제로 낸 돈이 아니에요. 다섯 번 다 월 구독 계정으로 돌렸기 때문에 추가로 결제된 건 0원입니다.\n\n표에 있는 금액은 같은 양을 쓴 만큼 종량제로 계산하면 이 정도 나온다는 환산값입니다.\n\n그래서 이 숫자로는 순위를 매기지 않았습니다."
     },
-
     {
-      "kind": "statement", "act": "반전", "at": "[07:44–08:08]",
+      "kind": "statement",
+      "act": "반전",
+      "at": "[07:44–08:08]",
       "eyebrow": "그런데",
       "headline": "브라우저로 <em>직접 열어봤습니다</em>",
-      "blocks": [{"type": "quote", "content": "빌드가 됐다는 건 화면에 잘 나온다는 뜻이 아닙니다."}],
+      "blocks": [
+        {
+          "type": "quote",
+          "content": "빌드가 됐다는 건 화면에 잘 나온다는 뜻이 아닙니다."
+        }
+      ],
       "on_screen": "한 문장",
       "narration": "여기서부터가 진짜 결과입니다.\n\n빌드가 됐다는 건 코드에 문법 오류가 없다는 뜻이지, 화면에 제대로 나온다는 뜻이 아니거든요.\n\n그래서 다섯 개를 전부 인터넷에 올리고, 같은 창 크기에서 하나씩 열어봤습니다."
     },
     {
-      "kind": "body", "act": "반전", "at": "[08:08–08:46]",
+      "kind": "body",
+      "act": "반전",
+      "at": "[08:08–08:46]",
       "eyebrow": "제대로 나온 것",
       "headline": "<em>둘</em>이었습니다",
-      "blocks": [{"type": "shots", "content": {"cols": 2, "items": [
-        {"src": "screenshots/sol.jpg", "label": "GPT-5.6 Sol", "note": "달 옆에 '태양 방향' 화살표까지", "alt": "sol 정상 렌더링"},
-        {"src": "screenshots/fable5.jpg", "label": "Claude Fable 5", "note": "다섯 중 화면이 가장 좋음", "alt": "fable 정상 렌더링"}
-      ]}}],
+      "blocks": [
+        {
+          "type": "shots",
+          "content": {
+            "cols": 2,
+            "items": [
+              {
+                "src": "screenshots/sol.jpg",
+                "label": "GPT-5.6 Sol",
+                "note": "달 옆에 '태양 방향' 화살표까지",
+                "alt": "sol 정상 렌더링"
+              },
+              {
+                "src": "screenshots/fable5.jpg",
+                "label": "Claude Fable 5",
+                "note": "다섯 중 화면이 가장 좋음",
+                "alt": "fable 정상 렌더링"
+              }
+            ]
+          }
+        }
+      ],
       "on_screen": "정상 2개 스크린샷",
       "narration": "Sol과 Fable입니다.\n\nSol은 달 옆에 태양 방향 화살표까지 그려놨어요. 왜 달이 저 모양으로 보이는지를 설명하라는 요구를 가장 직접적으로 지킨 겁니다.\n\nFable은 다섯 중에 화면이 제일 좋습니다. 태양 빛 번짐이나 궤도를 따라 흐르는 빛이 살아 있으면서도 과하지 않아요.\n\n둘 다 제가 테스트한 두 가지 창 크기에서 모두 정상이었습니다."
     },
     {
-      "kind": "body", "act": "반전", "at": "[08:46–09:30]",
+      "kind": "body",
+      "act": "반전",
+      "at": "[08:46–09:30]",
       "eyebrow": "깨진 것 · Opus 5",
       "headline": "같은 모델이 <em>두 번, 다른 방식으로</em>",
-      "blocks": [{"type": "shots", "content": {"cols": 2, "items": [
-        {"src": "screenshots/opus5-run1.jpg", "label": "1회차 — 행성이 사라짐", "note": "창 높이에 따라. 오류 메시지도 없음", "alt": "opus 1회차 파손"},
-        {"src": "screenshots/opus5-run2.jpg", "label": "2회차 — 태양 빛이 화면을 덮음", "note": "창 크기와 상관없이 깨짐", "alt": "opus 2회차 파손"}
-      ]}}],
+      "blocks": [
+        {
+          "type": "shots",
+          "content": {
+            "cols": 2,
+            "items": [
+              {
+                "src": "screenshots/opus5-run1.jpg",
+                "label": "1회차 — 행성이 사라짐",
+                "note": "창 높이에 따라. 오류 메시지도 없음",
+                "alt": "opus 1회차 파손"
+              },
+              {
+                "src": "screenshots/opus5-run2.jpg",
+                "label": "2회차 — 태양 빛이 화면을 덮음",
+                "note": "창 크기와 상관없이 깨짐",
+                "alt": "opus 2회차 파손"
+              }
+            ]
+          }
+        }
+      ],
       "on_screen": "Opus 파손 2종",
       "narration": "Opus 5는 두 번 다 깨졌습니다. 그런데 깨지는 방식이 서로 달라요.\n\n첫 실행은 창 높이가 어떤 값일 때 태양이랑 행성이 통째로 사라집니다. 글자만 남아요. 오류 메시지도 안 뜹니다. 창을 세로로 키우면 멀쩡하게 나오고요.\n\n두 번째 실행은 이번엔 태양 빛이 화면 전체를 덮어버립니다. 이건 창 크기를 바꿔도 똑같이 깨져요.\n\n두 번 다 화면 효과 처리에서 실패했습니다. 한 번이면 우연인데, 두 번이면 우연이라고 하기 어렵습니다."
     },
     {
-      "kind": "body", "act": "반전", "at": "[09:30–10:06]",
+      "kind": "body",
+      "act": "반전",
+      "at": "[09:30–10:06]",
       "eyebrow": "깨진 것 · Grok 4.5",
       "headline": "<em>하지 말라고 적어둔</em> 실수였습니다",
       "blocks": [
-        {"type": "quote", "content": "\"이렇게 하면 화면 전체에 빛 번짐이 도배됩니다\" — 제가 준 주문서에 적힌 문장"},
-        {"type": "shots", "content": {"cols": 1, "items": [
-          {"src": "screenshots/grok45.jpg", "label": "Grok 4.5", "note": "빛 번짐이 화면을 덮어 태양계가 거의 안 보임", "alt": "grok 파손"}]}}
+        {
+          "type": "quote",
+          "content": "\"이렇게 하면 화면 전체에 빛 번짐이 도배됩니다\" — 제가 준 주문서에 적힌 문장"
+        },
+        {
+          "type": "shots",
+          "content": {
+            "cols": 1,
+            "items": [
+              {
+                "src": "screenshots/grok45.jpg",
+                "label": "Grok 4.5",
+                "note": "빛 번짐이 화면을 덮어 태양계가 거의 안 보임",
+                "alt": "grok 파손"
+              }
+            ]
+          }
+        }
       ],
       "on_screen": "주문서 인용 + grok 화면",
       "narration": "Grok은 더 뼈아픕니다.\n\n제가 주문서에 이렇게 적어놨거든요. 이런 식으로 처리하면 화면 전체에 빛 번짐이 도배되니까 하지 마라.\n\n결과물이 정확히 그 상태입니다. 무지개색 줄무늬가 화면을 덮어서 태양계가 거의 안 보여요.\n\n그리고 달 정보에는 보름달이라고 써놓고 달을 거의 새까맣게 그립니다. 핵심 기능이 정반대로 동작하는 거죠."
     },
     {
-      "kind": "statement", "act": "반전", "at": "[10:06–10:34]",
+      "kind": "statement",
+      "act": "반전",
+      "at": "[10:06–10:34]",
       "eyebrow": "정리",
       "headline": "시험은 <em>전부 통과</em>,<br>화면은 <em>둘만 성공</em>",
-      "blocks": [{"type": "table", "content": {
-        "cols": ["무엇을 확인했나", "결과"],
-        "rows": [
-          ["코드가 빌드되는가", "<span class='ok'>5개 전부 통과</span>"],
-          ["계산이 맞는가", "<span class='ok'>5개 전부 통과</span>"],
-          ["서버가 응답하는가", "<span class='ok'>5개 전부 통과</span>"],
-          ["화면이 제대로 나오는가", "<span class='bad'>2개만 · 자동 확인 불가</span>"]
-        ]}}],
+      "blocks": [
+        {
+          "type": "table",
+          "content": {
+            "cols": [
+              "무엇을 확인했나",
+              "결과"
+            ],
+            "rows": [
+              [
+                "코드가 빌드되는가",
+                "<span class='ok'>5개 전부 통과</span>"
+              ],
+              [
+                "계산이 맞는가",
+                "<span class='ok'>5개 전부 통과</span>"
+              ],
+              [
+                "서버가 응답하는가",
+                "<span class='ok'>5개 전부 통과</span>"
+              ],
+              [
+                "화면이 제대로 나오는가",
+                "<span class='bad'>2개만 · 자동 확인 불가</span>"
+              ]
+            ]
+          }
+        }
+      ],
       "on_screen": "시험 vs 실제 대조표",
       "narration": "정리하면 이렇습니다.\n\n빌드도 진짜 통과했고, 계산도 진짜 맞았고, 서버도 진짜 응답합니다. 제가 만든 시험이 부실했던 게 아니에요.\n\n다만 화면에 뭐가 그려졌는지는 눈으로 봐야만 알 수 있습니다. 명령어로는 확인할 방법이 없어요.\n\n그리고 이번 비교에서 순위를 가른 문제는 전부 거기 있었습니다."
     },
-
     {
-      "kind": "body", "act": "결론", "at": "[10:34–11:14]",
+      "kind": "body",
+      "act": "결론",
+      "at": "[10:34–11:14]",
       "eyebrow": "정리",
       "headline": "가져갈 것 <em>세 가지</em>",
-      "blocks": [{"type": "kw", "content": ["화면은 눈으로 봐야 한다", "창 크기를 두 개 이상", "전체 사용량은 순위가 아니다"]}],
+      "blocks": [
+        {
+          "type": "kw",
+          "content": [
+            "화면은 눈으로 봐야 한다",
+            "창 크기를 두 개 이상",
+            "전체 사용량은 순위가 아니다"
+          ]
+        }
+      ],
       "on_screen": "교훈 3개",
       "narration": "이번 실험에서 가져갈 건 세 가지입니다.\n\n첫째, 화면이 있는 작업은 눈으로 봐야 채점할 수 있습니다. 그리고 창 크기를 최소 두 개는 봐야 해요. Opus 첫 실행은 한 크기에서만 깨졌으니까요.\n\n둘째, 전체 사용량으로 순위를 매기면 안 됩니다. 대부분이 다시 읽은 양이고, 그건 대화를 몇 번 주고받았느냐의 문제입니다.\n\n셋째, 서버 장애랑 모델 실력을 구분해야 합니다. 안 그러면 그날 서버 상태를 실력으로 기록하게 됩니다."
     },
     {
-      "kind": "statement", "act": "결론", "at": "[11:14–11:40]",
+      "kind": "body",
+      "act": "결론",
+      "at": "[11:14–11:58]",
+      "eyebrow": "제 의견 · 측정값 아님",
+      "headline": "저는 <em>이렇게 씁니다</em>",
+      "blocks": [
+        {
+          "type": "picks",
+          "content": [
+            {
+              "role": "주력",
+              "name": "Opus 5",
+              "why": "회사에서 월 100달러 요금제로 실제 사용 중"
+            },
+            {
+              "role": "어려운 문제",
+              "name": "Fable 5",
+              "why": "막히는 부분만 꺼내서"
+            }
+          ]
+        }
+      ],
+      "on_screen": "주력 / 어려운 문제 2줄",
+      "narration": "여기서부터는 측정값이 아니라 제 개인 의견입니다.\n\n저는 회사에서 월 100달러 요금제를 쓰고 있고, 실제로 이렇게 씁니다. 평소 작업은 Opus 5로 계속 하고, 잘 안 풀리는 문제만 Fable 5를 꺼내 씁니다.\n\n오늘 결과에서는 Opus가 두 번 다 화면이 깨졌죠. 그런데도 주력으로 쓰는 이유는, 이 실험이 모델당 한 번씩 돌린 결과이고 과제도 하나뿐이기 때문입니다. 그리고 깨진 부분이 화면 효과 처리라는 특정 영역이었고요.\n\n매일 쓰는 작업에서는 제 경험상 아직 Opus가 가장 안정적입니다. 가성비를 따져도 그렇고요."
+    },
+    {
+      "kind": "body",
+      "act": "결론",
+      "at": "[11:58–12:34]",
+      "eyebrow": "제 의견 · 측정값 아님",
+      "headline": "그 다음은",
+      "blocks": [
+        {
+          "type": "picks",
+          "content": [
+            {
+              "role": "다음 후보",
+              "name": "Codex 병행",
+              "why": "GPT-5.6 Sol 이 가성비가 좋아 보입니다"
+            },
+            {
+              "role": "아직 실무 X",
+              "name": "Grok 4.5",
+              "why": "자동화나 개인 프로젝트에 실험적으로만"
+            }
+          ]
+        }
+      ],
+      "on_screen": "다음 후보 / 실험용 2줄",
+      "narration": "다음 후보는 Codex입니다. 병행해서 쓸 것 같아요. 특히 오늘 1위였던 5.6 Sol은 가성비가 좋아 보입니다. 27분에 끝냈고, 환산 비용도 5달러 수준이었으니까요.\n\nGrok은 아직 실무에는 못 쓸 것 같습니다. 10분에 끝내는 속도는 확실히 매력적인데, 오늘처럼 하지 말라고 적어둔 걸 그대로 하는 경우가 나오면 결국 제가 다시 손봐야 하거든요.\n\n대신 자동화 스크립트나 개인 프로젝트처럼 깨져도 부담 없는 데에는 실험적으로 써볼 만합니다."
+    },
+    {
+      "kind": "statement",
+      "act": "결론",
+      "at": "[12:34–13:00]",
       "eyebrow": "한계",
       "headline": "각 모델을 <em>한 번씩</em>만 돌렸습니다",
-      "blocks": [{"type": "kw", "content": ["과제 1개", "모델당 1회 (Opus만 2회)", "창 크기 2개만 확인"]}],
+      "blocks": [
+        {
+          "type": "kw",
+          "content": [
+            "과제 1개",
+            "모델당 1회 (Opus만 2회)",
+            "창 크기 2개만 확인"
+          ]
+        }
+      ],
       "on_screen": "한계 3개",
       "narration": "마지막으로 한계를 말씀드려야겠습니다.\n\n과제는 하나고, 모델당 한 번씩만 돌렸습니다. Opus만 두 번이고요. 이걸로 어느 회사 AI가 더 낫다고 말할 수는 없습니다.\n\n다만 Opus를 두 번 돌렸는데 양쪽 다 깨졌다는 건, 우연으로 넘기기는 어려운 결과입니다."
     },
     {
-      "kind": "body", "act": "결론", "at": "[11:40–12:00]",
+      "kind": "body",
+      "act": "결론",
+      "at": "[13:00–13:18]",
       "eyebrow": "전부 공개했습니다",
       "headline": "직접 확인해 보세요",
-      "blocks": [{"type": "links", "content": [
-        {"label": "결과물 4개", "url": "https://space3d-sol.vercel.app"},
-        {"label": "상세 리포트", "url": "https://space3d-benchmark-report.vercel.app"},
-        {"label": "코드와 원본 데이터", "url": "https://github.com/yjsplay2002/space3d-agent-benchmark"}
-      ]}],
+      "blocks": [
+        {
+          "type": "links",
+          "content": [
+            {
+              "label": "결과물 4개",
+              "url": "https://space3d-sol.vercel.app"
+            },
+            {
+              "label": "상세 리포트",
+              "url": "https://space3d-benchmark-report.vercel.app"
+            },
+            {
+              "label": "코드와 원본 데이터",
+              "url": "https://github.com/yjsplay2002/space3d-agent-benchmark"
+            }
+          ]
+        }
+      ],
       "on_screen": "공개 링크 3개",
       "narration": "측정한 원본 데이터랑 다섯 개 결과물 전체, 그리고 제가 쓴 벤치마크 코드까지 전부 공개해뒀습니다. 링크는 설명란에 있습니다.\n\n직접 돌려보시고 다른 결과가 나오면 알려주세요."
     }
   ],
-
-  "description": "AI 코딩 도구 4개(Claude Opus 5 / Claude Fable 5 / GPT-5.6 Sol / Grok 4.5)에 똑같은 주문서를 주고 3D 태양계 앱을 만들게 했습니다. 총 5번 실행.\n\n자동 시험은 다섯 개 전부 만점이었습니다. 그런데 직접 열어보니 세 개는 화면이 깨져 있었습니다.\n\n▶ 결과물 직접 열어보기\n   GPT-5.6 Sol    https://space3d-sol.vercel.app\n   Claude Fable 5 https://space3d-fable5.vercel.app\n   Claude Opus 5  https://space3d-opus5.vercel.app\n   Grok 4.5       https://space3d-grok45.vercel.app\n\n⏰ TIMESTAMPS:\n0:00 - 무엇을 시켰나\n0:16 - 만들게 한 앱\n0:50 - 먼저 결과부터\n1:30 - 시험은 만점인데 화면은 깨짐\n2:00 - 공정하게 겨루기 위한 조건\n3:30 - 시간 · 사용량 · 비용\n7:44 - 직접 열어봤습니다\n10:34 - 정리\n\nRESOURCES:\n➡️ 코드와 원본 데이터: https://github.com/yjsplay2002/space3d-agent-benchmark\n➡️ 상세 리포트: https://space3d-benchmark-report.vercel.app\n\n#클로드코드 #코딩AI #벤치마크",
-
+  "description": "AI 코딩 도구 4개(Claude Opus 5 / Claude Fable 5 / GPT-5.6 Sol / Grok 4.5)에 똑같은 주문서를 주고 3D 태양계 앱을 만들게 했습니다. 총 5번 실행.\n\n자동 시험은 다섯 개 전부 만점이었습니다. 그런데 직접 열어보니 세 개는 화면이 깨져 있었습니다.\n\n▶ 결과물 직접 열어보기\n   GPT-5.6 Sol    https://space3d-sol.vercel.app\n   Claude Fable 5 https://space3d-fable5.vercel.app\n   Claude Opus 5  https://space3d-opus5.vercel.app\n   Grok 4.5       https://space3d-grok45.vercel.app\n\n⏰ TIMESTAMPS:\n0:00 - 무엇을 시켰나\n0:16 - 만들게 한 앱\n0:50 - 먼저 결과부터\n1:30 - 시험은 만점인데 화면은 깨짐\n2:00 - 공정하게 겨루기 위한 조건\n3:30 - 시간 · 사용량 · 비용\n7:44 - 직접 열어봤습니다\n10:34 - 정리\n11:14 - 제 의견: 저는 이렇게 씁니다\n\nRESOURCES:\n➡️ 코드와 원본 데이터: https://github.com/yjsplay2002/space3d-agent-benchmark\n➡️ 상세 리포트: https://space3d-benchmark-report.vercel.app\n\n#클로드코드 #코딩AI #벤치마크",
   "notes": [
     "03번 슬라이드에서 실제로 URL을 클릭해 화면 녹화로 보여준다. Sol → Fable → Opus → Grok 순서로 열면 정상 두 개를 먼저 보고 깨진 걸 보게 되어 대비가 산다",
     "07:44 '직접 열어봤습니다'부터 톤을 한 단계 낮춘다 — 반전 구간은 담담할수록 세게 들린다",
