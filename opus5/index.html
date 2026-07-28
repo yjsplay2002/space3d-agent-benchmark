@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#000005" />
+<meta name="description" content="우리 태양계 탐험 — 오늘 밤 실제 하늘과 같은 행성 배치와 달의 위상을 볼 수 있는 어린이 교육용 3D 태양계 시뮬레이터" />
+<title>우리 태양계 탐험</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='7' fill='%23ffb648'/%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%2358e6ff' stroke-width='1.4' opacity='.7'/%3E%3C/svg%3E" />
+</head>
+<body>
+
+<!-- 3D 캔버스 + CSS2D 라벨이 여기에 마운트된다 -->
+<div id="viewport"></div>
+<div id="labels"></div>
+
+<!-- ── 로딩 화면 ───────────────────────────────────────────────────────── -->
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-mark">
+      <span class="loader-sun"></span>
+      <span class="loader-ring"></span>
+      <span class="loader-ring loader-ring-2"></span>
+    </div>
+    <h1 class="loader-title">우리 태양계 탐험</h1>
+    <p class="loader-sub">SOLAR SYSTEM EXPLORER</p>
+    <div class="loader-bar"><i id="loader-fill"></i></div>
+    <p class="loader-status"><span id="loader-pct">0</span>% <span id="loader-what">우주를 준비하는 중…</span></p>
+  </div>
+</div>
+
+<!-- ── 좌상단 타이틀 HUD ───────────────────────────────────────────────── -->
+<header id="hud-title">
+  <h1>우리 태양계 탐험</h1>
+  <p class="tagline">행성을 클릭해 보세요</p>
+  <p class="scale-note">※ 크기와 거리는 실제 비율이 아니에요 (한눈에 보이도록 줄였어요)</p>
+</header>
+
+<!-- ── 우상단 조작 버튼 ────────────────────────────────────────────────── -->
+<div id="hud-actions">
+  <button id="btn-overview" class="hud-btn" type="button" title="전체 보기 (ESC)">
+    <span class="ico">⤢</span> 전체 보기
+  </button>
+  <button id="btn-help" class="hud-btn" type="button" title="도움말">
+    <span class="ico">?</span>
+  </button>
+</div>
+
+<!-- ── 달 인셋 패널 (항상 표시) ────────────────────────────────────────── -->
+<section id="moon-panel" aria-label="지구에서 보는 달">
+  <div class="moon-panel-head">
+    <span class="moon-eyebrow">지구에서 보는 달</span>
+    <button id="moon-focus" class="moon-focus" type="button" title="3D에서 달 보기">3D로 보기 ›</button>
+  </div>
+  <div class="moon-disc-wrap">
+    <canvas id="moon-canvas" width="260" height="260" aria-label="현재 달 모양"></canvas>
+    <div class="moon-glow"></div>
+  </div>
+  <div class="moon-name" id="moon-phase-name">보름달</div>
+  <div class="moon-stats">
+    <div class="moon-stat"><b id="moon-illum">100</b><span>%</span><i>밝기</i></div>
+    <div class="moon-stat"><b id="moon-age">14.8</b><span>일</span><i>월령</i></div>
+    <div class="moon-stat"><b id="moon-tofull">0.0</b><span>일</span><i>다음 보름</i></div>
+  </div>
+  <p class="moon-why" id="moon-why"></p>
+</section>
+
+<!-- ── 우측 정보 패널 ──────────────────────────────────────────────────── -->
+<aside id="info-panel" aria-live="polite">
+  <button id="info-close" class="info-close" type="button" aria-label="닫기">✕</button>
+  <div class="info-scroll">
+    <div class="info-head">
+      <div class="info-emoji" id="info-emoji">🪐</div>
+      <div>
+        <div class="info-type" id="info-type">행성</div>
+        <h2 class="info-name" id="info-name">지구</h2>
+        <div class="info-name-en" id="info-name-en">Earth</div>
+      </div>
+    </div>
+    <p class="info-blurb" id="info-blurb"></p>
+    <div class="info-section-title">숫자로 보는 <span id="info-name-2">지구</span></div>
+    <dl class="info-stats" id="info-stats"></dl>
+    <div class="info-section-title">재미있는 사실</div>
+    <ul class="info-facts" id="info-facts"></ul>
+    <div class="info-spin" id="info-spin"></div>
+  </div>
+</aside>
+
+<!-- ── 하단 시간/날짜 바 ───────────────────────────────────────────────── -->
+<footer id="timebar">
+  <div class="tb-group tb-date">
+    <button id="date-prev" class="tb-btn" type="button" title="하루 전 (←)">◀ 하루 전</button>
+    <div class="tb-datebox">
+      <div class="tb-dateline" id="date-text">2026년 7월 27일</div>
+      <div class="tb-dateaux" id="date-aux">오늘 · UTC 기준</div>
+    </div>
+    <button id="date-next" class="tb-btn" type="button" title="하루 후 (→)">하루 후 ▶</button>
+    <button id="date-today" class="tb-btn tb-btn-ghost" type="button" title="오늘로">오늘</button>
+  </div>
+
+  <div class="tb-sep"></div>
+
+  <div class="tb-group tb-play">
+    <button id="btn-play" class="tb-play-btn" type="button" title="재생 / 일시정지 (스페이스)">
+      <span id="play-icon">▶</span>
+    </button>
+    <div class="tb-speed">
+      <input id="speed" type="range" min="-1" max="3" step="0.01" value="0" aria-label="시간 배속" />
+      <div class="tb-speed-label">
+        <b id="speed-text">1.0x</b>
+        <i id="speed-aux">1초 = 1일</i>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ── 도움말 오버레이 ─────────────────────────────────────────────────── -->
+<div id="help" hidden>
+  <div class="help-card">
+    <button id="help-close" class="info-close" type="button" aria-label="닫기">✕</button>
+    <h2>어떻게 놀면 되나요?</h2>
+    <ul>
+      <li><b>휠 / 두 손가락</b> — 가까이 보기, 멀리 보기</li>
+      <li><b>드래그</b> — 태양계를 빙글빙글 돌려 보기</li>
+      <li><b>행성 클릭</b> — 그 행성으로 날아가서 자세히 보기</li>
+      <li><b>← →</b> — 하루씩 날짜 넘기기 (행성과 달이 바로 움직여요)</li>
+      <li><b>스페이스</b> — 시간 재생 / 멈춤</li>
+      <li><b>ESC</b> — 태양계 전체 보기로 돌아오기</li>
+    </ul>
+    <p class="help-note">
+      행성들의 배치각과 달의 모양은 <b>오늘 실제 하늘</b>과 같아요.
+      하루씩 넘기면서 달이 차고 기우는 걸 살펴보세요.
+    </p>
+    <p class="help-credit">텍스처: Solar System Scope (CC BY 4.0)</p>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+{
+  "_note": [
+    "코딩 에이전트 벤치마크 설정. 스킬: coding-benchmark",
+    "실행: python3 ~/.claude/skills/coding-benchmark/scripts/run_benchmark.py --config bench.json",
+    "검증: python3 ~/.claude/skills/coding-benchmark/scripts/verify.py --config bench.json"
+  ],
+  "task_id": "2026-07-27-space3d-moon",
+  "prompt_file": "PROMPT.md",
+  "run_root": "runs/2026-07-27-space3d-moon",
+  "seed_dir": null,
+  "parallel": false,
+  "timeout_sec": 3600,
+  "isolate_user_config": true,
+  "_pricing_note": [
+    "API 환산가 계산용. USD / 100만 토큰.",
+    "claude 와 grok 은 비용을 스스로 보고하므로 이 표를 쓰지 않는다.",
+    "codex 만 환산이 필요하다. 비워두면 리포트의 codex 비용 칸은 N/A.",
+    "채울 때는 openai.com/api/pricing 에서 확인하고 source 에 URL + 확인일을 남길 것."
+  ],
+  "pricing": {},
+  "verify": {
+    "setup": [
+      "npm install --no-audit --no-fund 2>&1 | tail -5"
+    ],
+    "setup_timeout": 900,
+    "checks": [
+      {
+        "name": "package-json-exists",
+        "cmd": "test -f package.json",
+        "critical": true,
+        "timeout": 20
+      },
+      {
+        "name": "build",
+        "cmd": "npm run build",
+        "critical": true,
+        "timeout": 900
+      },
+      {
+        "name": "dist-output",
+        "cmd": "test -f dist/index.html && test -d dist/assets",
+        "critical": true,
+        "timeout": 30
+      },
+      {
+        "name": "selftest",
+        "cmd": "npm run selftest",
+        "critical": true,
+        "timeout": 300
+      },
+      {
+        "name": "ephemeris-module",
+        "cmd": "test -f src/ephemeris.js",
+        "critical": false,
+        "timeout": 20
+      },
+      {
+        "name": "moonview-module",
+        "cmd": "test -f src/moonview.js",
+        "critical": false,
+        "timeout": 20
+      },
+      {
+        "name": "date-step-controls",
+        "cmd": "grep -rqiE '하루|oneDay|stepDay|addDays|dayStep|prevDay|nextDay' src/ index.html",
+        "critical": false,
+        "timeout": 30
+      },
+      {
+        "name": "no-runtime-cdn",
+        "cmd": "! grep -rniE 'src=\"https?://|from \"https?://|import\\(\"https?://' index.html src/ 2>/dev/null | grep -viE 'solarsystemscope|texture'",
+        "critical": false,
+        "timeout": 30
+      },
+      {
+        "name": "textures-present",
+        "cmd": "test -d public/textures && test $(ls -1 public/textures 2>/dev/null | wc -l) -ge 5",
+        "critical": false,
+        "timeout": 30
+      },
+      {
+        "name": "preview-serves",
+        "cmd": "(npm run preview -- --port 4399 >/tmp/prev_$$.log 2>&1 & echo $! > /tmp/prevpid_$$) ; sleep 8 ; curl -sf -o /dev/null http://localhost:4399/ ; rc=$? ; kill $(cat /tmp/prevpid_$$) 2>/dev/null ; exit $rc",
+        "critical": false,
+        "timeout": 90
+      }
+    ]
+  },
+  "contestants": [
+    {
+      "id": "claude-opus5-high",
+      "cli": "claude",
+      "model": "claude-opus-5",
+      "effort": "high"
+    },
+    {
+      "id": "codex-56sol-high",
+      "cli": "codex",
+      "model": "gpt-5.6-sol",
+      "effort": "high"
+    },
+    {
+      "id": "grok-45-high",
+      "cli": "grok",
+      "model": "grok-4.5",
+      "effort": "high"
+    }
+  ],
+  "_agy_note": [
+    "Google Antigravity(agy)는 일시 중지. 토큰을 보고하지 않아 4대 지표 중 하나를 못 채운다.",
+    "새 모델 나왔을 때 아래를 contestants 에 추가하면 바로 참가한다:",
+    "  {\"id\": \"gemini-agy-high\", \"cli\": \"agy\", \"model\": null, \"effort\": \"high\"}"
+  ],
+  "_verified_2026_07_27": {
+    "claude-opus-5": "실행 확인",
+    "gpt-5.6-sol": "실행 확인. 격리 모드에서도 통과",
+    "grok-4.5": "실행 확인 (grok-4.5-build 로 서빙)",
+    "effort_high": "세 CLI 모두 high 가 유효값임을 오류 응답으로 역확인",
+    "auth": "claude=claude.ai Max / codex=ChatGPT Plus / grok=grok.com — 전부 구독"
+  },
+  "max_attempts": 6,
+  "_retry_note": [
+    "max_attempts: 완료(critical 체크 통과)까지 세션을 재개하며 최대 몇 번 시도할지.",
+    "매 시도는 처음부터가 아니라 이전 세션을 resume 하므로 작업이 누적된다.",
+    "실패한 검증 출력이 다음 시도의 프롬프트로 그대로 전달된다.",
+    "wall_sec 는 모든 시도의 합계 = '완료까지 실제로 걸린 시간'."
+  ]
+}

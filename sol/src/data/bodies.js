@@ -1,0 +1,87 @@
+const bodies = {
+  sun: {
+    id: 'sun', ko: '태양', en: 'Sun', type: '항성', icon: '☀️',
+    diameter: '1,392,700 km', mass: '1.989 × 10³⁰ kg', distance: '태양계의 중심',
+    orbit: '은하 중심을 약 2억 3천만 년에 1회', rotation: '적도 약 25일', temperature: '표면 약 5,500°C',
+    moons: '8행성과 수많은 작은 천체', gravity: '27.9', tilt: 7.25, radius: 4.4, color: 0xffb34d,
+    texture: '2k_sun.jpg', rotationDays: 25.05, retrograde: false,
+    direction: '서쪽에서 동쪽으로 자전해요. 기체라서 위도마다 속도가 달라요.',
+    facts: ['태양계 질량의 99.86%를 차지해요.', '중심에서는 매초 약 6억 톤의 수소가 핵융합해요.', '태양빛은 지구까지 오는 데 약 8분 20초가 걸려요.', '태양은 노란색으로 보이지만 실제 빛은 거의 흰색이에요.'],
+  },
+  mercury: {
+    id: 'mercury', ko: '수성', en: 'Mercury', type: '암석 행성', icon: '☿',
+    diameter: '4,879 km', mass: '3.301 × 10²³ kg', distance: '평균 5,791만 km',
+    orbit: '87.97일', rotation: '58.65일', temperature: '평균 167°C', moons: '0개', gravity: '0.38',
+    tilt: 0.034, radius: 0.55, color: 0xb9aea0, texture: '2k_mercury.jpg', rotationDays: 58.646, retrograde: false,
+    direction: '태양 주위를 반시계 방향으로 돌고 같은 방향으로 천천히 자전해요.',
+    facts: ['태양에 가장 가까운 행성이에요.', '낮에는 약 430°C, 밤에는 약 -180°C까지 내려가요.', '1년이 지구의 88일뿐이에요.', '대기가 거의 없어 운석 구덩이가 그대로 남아요.'],
+  },
+  venus: {
+    id: 'venus', ko: '금성', en: 'Venus', type: '암석 행성', icon: '♀',
+    diameter: '12,104 km', mass: '4.867 × 10²⁴ kg', distance: '평균 1억 820만 km',
+    orbit: '224.70일', rotation: '243.03일(역방향)', temperature: '평균 464°C', moons: '0개', gravity: '0.90',
+    tilt: 177.36, radius: 0.92, color: 0xe5b77a, texture: '2k_venus_surface.jpg', rotationDays: -243.025, retrograde: true,
+    direction: '대부분의 행성과 반대로 천천히 자전해요. 금성에서는 해가 서쪽에서 떠요.',
+    facts: ['하루가 1년보다 더 길어요.', '두꺼운 이산화탄소 대기 때문에 가장 뜨거운 행성이에요.', '크기와 질량이 지구와 비슷해 지구의 쌍둥이라 불려요.', '표면 기압은 지구의 약 92배예요.'],
+  },
+  earth: {
+    id: 'earth', ko: '지구', en: 'Earth', type: '암석 행성', icon: '🌍',
+    diameter: '12,742 km', mass: '5.972 × 10²⁴ kg', distance: '평균 1억 4,960만 km',
+    orbit: '365.256일', rotation: '23시간 56분', temperature: '평균 15°C', moons: '1개', gravity: '1.00',
+    tilt: 23.439, radius: 1, color: 0x49a7ff, texture: '2k_earth_daymap.jpg', rotationDays: 0.99727, retrograde: false,
+    direction: '북극 위에서 보면 반시계 방향으로 자전하고 태양을 공전해요.',
+    facts: ['표면의 약 71%가 바다예요.', '생명체가 사는 것으로 확인된 유일한 행성이에요.', '자전축 기울기 때문에 계절이 생겨요.', '달은 지구의 자전축을 안정시키는 데 도움을 줘요.'],
+  },
+  moon: {
+    id: 'moon', ko: '달', en: 'Moon', type: '지구의 위성', icon: '🌙',
+    diameter: '3,474.8 km', mass: '7.342 × 10²² kg', distance: '지구에서 평균 384,400 km',
+    orbit: '27.322일(항성월)', rotation: '27.322일', temperature: '평균 약 -20°C', moons: '0개', gravity: '0.166',
+    tilt: 6.68, radius: 0.28, color: 0xdde2e8, texture: '2k_moon.jpg', rotationDays: 27.322, retrograde: false,
+    direction: '공전과 자전 주기가 같아 지구에는 늘 거의 같은 면을 보여요.',
+    facts: ['달빛은 태양빛을 반사한 빛이에요.', '지구와 달의 위치에 따라 모양이 달라 보여요.', '달의 중력은 지구의 밀물과 썰물을 만들어요.', '발자국은 바람과 비가 없어 아주 오래 남아요.'],
+  },
+  mars: {
+    id: 'mars', ko: '화성', en: 'Mars', type: '암석 행성', icon: '♂',
+    diameter: '6,779 km', mass: '6.417 × 10²³ kg', distance: '평균 2억 2,790만 km',
+    orbit: '686.98일', rotation: '24시간 37분', temperature: '평균 -63°C', moons: '2개', gravity: '0.38',
+    tilt: 25.19, radius: 0.66, color: 0xd66b43, texture: '2k_mars.jpg', rotationDays: 1.02596, retrograde: false,
+    direction: '지구와 같은 방향으로 자전하고 공전해요.',
+    facts: ['산화철 때문에 붉게 보여요.', '태양계에서 가장 큰 화산 올림푸스산이 있어요.', '옛날에는 표면에 물이 흘렀던 흔적이 있어요.', '포보스와 데이모스라는 작은 달이 두 개 있어요.'],
+  },
+  jupiter: {
+    id: 'jupiter', ko: '목성', en: 'Jupiter', type: '가스 행성', icon: '♃',
+    diameter: '139,820 km', mass: '1.898 × 10²⁷ kg', distance: '평균 7억 7,850만 km',
+    orbit: '11.86년', rotation: '9시간 56분', temperature: '구름 꼭대기 평균 -110°C', moons: '95개', gravity: '2.53',
+    tilt: 3.13, radius: 2.42, color: 0xd8b08b, texture: '2k_jupiter.jpg', rotationDays: 0.41354, retrograde: false,
+    direction: '매우 빠르게 자전해 적도 부분이 불룩해요.',
+    facts: ['태양계에서 가장 큰 행성이에요.', '대적점은 지구보다 큰 거대한 폭풍이에요.', '다른 행성을 모두 합친 질량보다 약 2.5배 무거워요.', '가장 큰 달 가니메데는 수성보다 커요.'],
+  },
+  saturn: {
+    id: 'saturn', ko: '토성', en: 'Saturn', type: '가스 행성', icon: '♄',
+    diameter: '116,460 km', mass: '5.683 × 10²⁶ kg', distance: '평균 14억 3,400만 km',
+    orbit: '29.46년', rotation: '10시간 42분', temperature: '구름 꼭대기 평균 -140°C', moons: '146개', gravity: '1.07',
+    tilt: 26.73, radius: 2.08, color: 0xe0c38d, texture: '2k_saturn.jpg', rotationDays: 0.444, retrograde: false,
+    direction: '빠르게 자전하며 태양을 반시계 방향으로 공전해요.',
+    facts: ['수많은 얼음과 바위 조각이 멋진 고리를 만들어요.', '평균 밀도가 물보다 낮아요.', '위성 타이탄에는 두꺼운 대기와 메탄 호수가 있어요.', '북극에는 육각형 모양의 거대한 폭풍이 있어요.'],
+  },
+  uranus: {
+    id: 'uranus', ko: '천왕성', en: 'Uranus', type: '얼음 행성', icon: '⛢',
+    diameter: '50,724 km', mass: '8.681 × 10²⁵ kg', distance: '평균 28억 7,100만 km',
+    orbit: '84.01년', rotation: '17시간 14분(역방향)', temperature: '평균 -195°C', moons: '28개', gravity: '0.89',
+    tilt: 97.77, radius: 1.42, color: 0x93e5e7, texture: '2k_uranus.jpg', rotationDays: -0.71833, retrograde: true,
+    direction: '자전축이 97.8° 기울어 옆으로 구르듯 역방향 자전해요.',
+    facts: ['거의 옆으로 누운 채 태양을 돌아요.', '메탄 기체가 붉은빛을 흡수해 청록색으로 보여요.', '가느다란 고리가 13개 있어요.', '한 계절이 약 21년이나 계속돼요.'],
+  },
+  neptune: {
+    id: 'neptune', ko: '해왕성', en: 'Neptune', type: '얼음 행성', icon: '♆',
+    diameter: '49,244 km', mass: '1.024 × 10²⁶ kg', distance: '평균 44억 9,500만 km',
+    orbit: '164.8년', rotation: '16시간 6분', temperature: '평균 -200°C', moons: '16개', gravity: '1.14',
+    tilt: 28.32, radius: 1.38, color: 0x416fe5, texture: '2k_neptune.jpg', rotationDays: 0.6713, retrograde: false,
+    direction: '지구와 같은 방향으로 빠르게 자전해요.',
+    facts: ['태양에서 가장 멀리 있는 행성이에요.', '시속 2,000km가 넘는 태양계 최강의 바람이 불어요.', '수학 계산으로 존재를 예측한 뒤 발견했어요.', '위성 트리톤은 공전 방향이 반대예요.'],
+  },
+};
+
+export default bodies;
+export const BODY_LIST = Object.values(bodies);
+export const PLANETS = Object.values(bodies).filter((body) => !['sun', 'moon'].includes(body.id));

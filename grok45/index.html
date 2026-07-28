@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>우리 태양계 탐험 — Space3D</title>
+    <meta name="description" content="어린이 교육용 고해상도 3D 태양계 시뮬레이터" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link
+      rel="stylesheet"
+      as="style"
+      crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <div id="loading">
+        <div class="loading-inner">
+          <div class="loading-title">우리 태양계 탐험</div>
+          <div class="loading-sub">우주로 출발 준비 중…</div>
+          <div class="loading-bar-wrap">
+            <div id="loading-bar" class="loading-bar"></div>
+          </div>
+          <div id="loading-pct" class="loading-pct">0%</div>
+        </div>
+      </div>
+      <canvas id="c"></canvas>
+      <div id="labels"></div>
+      <div id="hud">
+        <header class="hud-top">
+          <div class="title-block">
+            <h1>우리 태양계 탐험</h1>
+            <p class="hint">행성을 클릭해 보세요 · 실제 비율 아님 (교육용 압축 스케일)</p>
+          </div>
+          <button id="btn-overview" class="hud-btn" type="button" title="전체 보기 (ESC)">전체 보기</button>
+        </header>
+        <aside id="info-panel" class="info-panel" aria-hidden="true">
+          <button id="panel-close" class="panel-close" type="button" aria-label="닫기">×</button>
+          <div id="panel-content"></div>
+        </aside>
+        <div id="moon-inset" class="moon-inset">
+          <div class="moon-inset-header">
+            <span class="moon-inset-title">지구에서 보는 달</span>
+            <span id="moon-phase-name" class="moon-phase-name">—</span>
+          </div>
+          <canvas id="moon-canvas" width="220" height="220"></canvas>
+          <div class="moon-stats">
+            <div><span class="lbl">조명률</span> <span id="moon-illum">—</span></div>
+            <div><span class="lbl">월령</span> <span id="moon-age">—</span></div>
+            <div><span class="lbl">다음 보름까지</span> <span id="moon-to-full">—</span></div>
+          </div>
+        </div>
+        <footer class="time-bar">
+          <div class="date-row">
+            <button id="btn-day-prev" class="hud-btn date-btn" type="button" title="하루 전 (←)">◀ 하루 전</button>
+            <div id="sim-date" class="sim-date">—</div>
+            <button id="btn-today" class="hud-btn date-btn" type="button">오늘</button>
+            <button id="btn-day-next" class="hud-btn date-btn" type="button" title="하루 후 (→)">하루 후 ▶</button>
+          </div>
+          <div class="play-row">
+            <button id="btn-play" class="hud-btn play-btn" type="button" aria-label="재생/일시정지">▶</button>
+            <label class="speed-label">
+              배속
+              <input id="speed-slider" type="range" min="0.1" max="1000" step="0.1" value="1" />
+              <span id="speed-display">1.0x</span>
+            </label>
+          </div>
+        </footer>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
