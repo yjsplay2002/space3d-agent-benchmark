@@ -75,7 +75,8 @@ opus5/     claude-opus-5 1회차
 opus5r2/   claude-opus-5 2회차
 grok45/    grok-4.5 결과물
 deck/      발표용 슬라이드 덱 (키보드 전환)
-video/     촬영용 16:9 덱 + 나레이션 대본 (video.json 에서 생성)
+video/     촬영용 16:9 덱 + 나레이션 대본 + 썸네일
+recording/ 촬영 세팅 (OBS 구성 · 원형 마스크)
 report/    상세 HTML 리포트 (자체완결)
 SPEC.md    과제 스펙
 PROMPT.md  에이전트에 전달된 프롬프트 전문
