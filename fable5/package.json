@@ -1,0 +1,17 @@
+{
+  "name": "space3d",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "어린이 교육용 3D 태양계 시뮬레이터",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "selftest": "node scripts/selftest.mjs"
+  },
+  "dependencies": {
+    "three": "^0.185.1",
+    "vite": "^8.1.5"
+  }
+}

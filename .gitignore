@@ -4,3 +4,5 @@ dist/
 .smoke/
 .DS_Store
 *.log
+
+.vercel/

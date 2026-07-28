@@ -1,0 +1,211 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>코딩 에이전트 벤치마크 — Space3D 태양계 시뮬레이터</title><style>
+*{box-sizing:border-box}
+.viz-root{
+  color-scheme:light;
+  --surface-1:#fcfcfb; --surface-2:#f4f4f2; --border:#e2e2dd;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#78776f;
+  --muted-fill:#dededa;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .viz-root{
+  color-scheme:dark;
+  --surface-1:#1a1a19; --surface-2:#232322; --border:#38382f;
+  --text-primary:#fff; --text-secondary:#c3c2b7; --text-muted:#94938a;
+  --muted-fill:#3a3a34;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+}}
+:root[data-theme="dark"] .viz-root{
+  color-scheme:dark;
+  --surface-1:#1a1a19; --surface-2:#232322; --border:#38382f;
+  --text-primary:#fff; --text-secondary:#c3c2b7; --text-muted:#94938a;
+  --muted-fill:#3a3a34;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+}
+.viz-root{
+  background:var(--surface-1); color:var(--text-primary);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo",
+       "Noto Sans KR",Segoe UI,sans-serif;
+  margin:0; padding:0;
+}
+.wrap{max-width:900px;margin:0 auto;padding:40px 20px 80px}
+h1{font-size:29px;line-height:1.25;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:21px;margin:52px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border);letter-spacing:-.01em}
+h3{font-size:16px;margin:28px 0 10px;color:var(--text-secondary)}
+p{margin:12px 0}
+.sub{color:var(--text-secondary);margin:0 0 22px}
+.meta{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0 30px}
+.meta span{background:var(--surface-2);border:1px solid var(--border);border-radius:999px;
+  padding:4px 11px;font-size:12.5px;color:var(--text-secondary)}
+.lede{background:var(--surface-2);border-left:3px solid var(--s1);border-radius:0 8px 8px 0;
+  padding:16px 20px;margin:22px 0}
+.lede p{margin:0}
+.callout{border:1px solid var(--border);border-left:3px solid var(--critical);
+  background:var(--surface-2);border-radius:0 8px 8px 0;padding:14px 18px;margin:20px 0}
+.callout strong{color:var(--critical)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{padding:9px 11px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{color:var(--text-secondary);font-weight:600;font-size:12px;
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1.5px solid var(--border)}
+tbody tr:hover{background:var(--surface-2)}
+td.win{font-weight:700}
+code{background:var(--surface-2);border:1px solid var(--border);border-radius:4px;
+  padding:1px 5px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.chart{margin:22px 0 26px;padding:0}
+.chart figcaption{font-size:14px;font-weight:600;margin-bottom:10px}
+.chart svg{width:100%;height:auto;overflow:visible}
+.cat{font-size:12.5px;fill:var(--text-secondary)}
+.val{font-size:12.5px;fill:var(--text-primary);font-weight:600}
+.val.sm{font-size:11.5px}
+.legend{font-size:12.5px;color:var(--text-secondary);margin:6px 0 0}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 12px;vertical-align:baseline}
+.legend .sw:first-child{margin-left:0}
+.note{font-size:12.5px;color:var(--text-muted);margin:8px 0 0}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600}
+.pill.ok{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.pill.bad{background:color-mix(in srgb,var(--critical) 16%,transparent);color:var(--critical)}
+.pill.warn{background:color-mix(in srgb,var(--serious) 20%,transparent);color:var(--serious)}
+.shots{display:grid;gap:18px;grid-template-columns:1fr;margin:18px 0}
+@media(min-width:680px){.shots.two{grid-template-columns:1fr 1fr}}
+.shot img{width:100%;border:1px solid var(--border);border-radius:8px;display:block}
+.shot p{font-size:12.5px;color:var(--text-muted);margin:7px 0 0}
+ul,ol{padding-left:22px}li{margin:6px 0}
+footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--border);
+  font-size:12.5px;color:var(--text-muted)}
+a{color:var(--s1)}
+</style></head><body class="viz-root"><div class="wrap"><h1>코딩 에이전트 벤치마크 — Space3D 태양계 시뮬레이터</h1>
+<p class="sub">동일한 스펙 하나를 4개 모델 · 5회 실행에 시켜 만들게 하고 시간 · 토큰 · 버그 · 품질을 계측한 기록</p>
+<div class="meta"><span>과제 ID: 2026-07-27-space3d-moon</span><span>실행: 2026-07-27 ~ 07-28 · 순차 (동시 실행 없음)</span><span>격리: 사용자 전역 설정 미적용</span><span>재시도: 완료까지 세션 재개, 최대 6회</span><span>참가: 4개 모델 / 5회 실행</span></div>
+<div class="lede"><p><strong>gpt-5.6-sol 과 claude-fable-5, 둘만 실제로 동작한다.</strong> 다섯 실행 전부가 자동 검증 10/10 만점을 받았지만 브라우저에서 열어보면 <strong>2승 3패</strong>다. 역법 정확도는 다섯 구현이 완전히 동일했다 — 행성 황경 상호 편차 0.0000°, 삭망월 오차 4.4~4.6분. 가장 어려워 보였던 기술 요소에는 변별력이 없었고, 순위는 전부 렌더링 품질에서 갈렸다.</p></div>
+<h2>배포된 결과물</h2><div class='scroll'><table><thead><tr><th>모델</th><th>URL</th><th>상태</th></tr></thead><tbody>
+<tr><td><code>gpt-5.6-sol</code></td><td style="text-align:left"><a href="https://space3d-sol.vercel.app">https://space3d-sol.vercel.app</a></td><td><span class="pill ok">정상</span></td></tr>
+<tr><td><code>claude-fable-5</code></td><td style="text-align:left"><a href="https://space3d-fable5.vercel.app">https://space3d-fable5.vercel.app</a></td><td><span class="pill ok">정상</span></td></tr>
+<tr><td><code>claude-opus-5 · 1회차</code></td><td style="text-align:left"><a href="https://space3d-opus5.vercel.app">https://space3d-opus5.vercel.app</a></td><td><span class="pill bad">창 높이에 따라 3D 씬 소실</span></td></tr>
+<tr><td><code>claude-opus-5 · 2회차</code></td><td style="text-align:left"><a href="https://space3d-opus5-run2.vercel.app">https://space3d-opus5-run2.vercel.app</a></td><td><span class="pill bad">태양 블룸 폭주</span></td></tr>
+<tr><td><code>grok-4.5</code></td><td style="text-align:left"><a href="https://space3d-grok45.vercel.app">https://space3d-grok45.vercel.app</a></td><td><span class="pill bad">렌즈플레어 고스트</span></td></tr>
+</tbody></table></div>
+<h2>종합</h2><div class='scroll'><table><thead><tr><th>모델</th><th>시간</th><th>시도</th><th>턴</th><th>비캐시 토큰</th><th>총 토큰</th><th>비용(API 환산)</th><th>자동검증</th><th>시각검증</th><th>코드</th></tr></thead><tbody>
+<tr><td><code>grok-4.5</code></td><td class="win">10.3분</td><td>1</td><td>17</td><td>131,492</td><td>1,039,396</td><td>$0.73</td><td>10/10</td><td><span class="pill bad">파손</span></td><td>5,078줄</td></tr>
+<tr><td><code>gpt-5.6-sol</code></td><td class="win">26.8분</td><td>1</td><td>N/A</td><td>256,181</td><td>4,554,421</td><td>$5.00</td><td>10/10</td><td><span class="pill ok">정상</span></td><td>4,173줄</td></tr>
+<tr><td><code>claude-fable-5</code></td><td class="win">32.9분</td><td>1</td><td>82</td><td>301,485</td><td>7,531,034</td><td>$17.18</td><td>10/10</td><td><span class="pill ok">정상</span></td><td>4,416줄</td></tr>
+<tr><td><code>claude-opus-5 · claude-opus5-high-run2</code></td><td class="win">35.7분</td><td>1</td><td>55</td><td>366,268</td><td>6,839,478</td><td>$9.56</td><td>10/10</td><td><span class="pill bad">파손</span></td><td>7,578줄</td></tr>
+<tr><td><code>claude-opus-5 · claude-opus5-high</code></td><td class="win">120.0분</td><td>2</td><td>153</td><td>611,136</td><td>32,150,726</td><td>$25.52</td><td>10/10</td><td><span class="pill bad">파손</span></td><td>8,293줄</td></tr>
+</tbody></table></div>
+<div class="callout"><strong>자동 검증은 아무것도 걸러내지 못했다.</strong> 다섯 실행 모두 빌드 성공 · 역법 자체테스트 통과 · dist 생성 · 프리뷰 200 응답으로 10/10이다. 그런데 실제로 보이는 화면은 셋이 깨져 있다. 셸 명령으로 짤 수 있는 체크는 픽셀을 보지 못한다 — 이 벤치마크의 순위를 결정한 것은 전부 그 바깥에 있었다.</div>
+<h2>소요 시간</h2>
+<figure class="chart"><figcaption>완료까지 걸린 시간 (마지막 새 시작 ~ 완료)</figcaption>
+<svg viewBox="0 0 720 228" role="img" aria-label="완료까지 걸린 시간 (마지막 새 시작 ~ 완료)">
+<text x="156" y="22.0" text-anchor="end" class="cat">grok-4.5</text><rect x="168" y="7" width="39.3" height="20" rx="4" fill="var(--s3)"/><text x="217.3" y="22.0" class="val">10.3분</text>
+<text x="156" y="66.0" text-anchor="end" class="cat">gpt-5.6-sol</text><rect x="168" y="51" width="101.9" height="20" rx="4" fill="var(--s1)"/><text x="279.9" y="66.0" class="val">26.8분</text>
+<text x="156" y="110.0" text-anchor="end" class="cat">claude-fable-5</text><rect x="168" y="95" width="125.0" height="20" rx="4" fill="var(--s4)"/><text x="303.0" y="110.0" class="val">32.9분</text>
+<text x="156" y="154.0" text-anchor="end" class="cat">claude-opus-5 · claude-opus5-high-run2</text><rect x="168" y="139" width="135.7" height="20" rx="4" fill="var(--s2)"/><text x="313.7" y="154.0" class="val">35.7분</text>
+<text x="156" y="198.0" text-anchor="end" class="cat">claude-opus-5 · claude-opus5-high</text><rect x="168" y="183" width="456.0" height="20" rx="4" fill="var(--s2)"/><text x="634.0" y="198.0" class="val">120.0분</text>
+</svg>
+<p class="note">순차 실행이라 CPU·대역폭 경합은 없다. <strong>opus-5 1회차의 120분은 소요 시간이 아니다</strong> — 두 시도 모두 60분 타임아웃에 걸린 합계이고, 1차는 Anthropic API 장애(HTTP 529 6회 · 재시도 8회)로 통째로 날아갔다. API 회복 후 같은 모델을 새 워크스페이스에서 다시 돌린 2회차는 <strong>35.7분에 타임아웃 없이 정상 종료</strong>했다. opus 5의 실제 소요 시간은 2회차로 읽어야 한다. 나머지 셋(codex · grok · fable)은 모두 1회 시도로 스스로 종료했다.</p>
+</figure>
+<h2>토큰 — 캐시와 비캐시</h2>
+<p>총 토큰은 <strong>캐시 읽기가 지배</strong>하고, 캐시 읽기는 턴 수에 비례할 뿐 작업량과 무관하다. opus-5 1회차는 총 32.15M 중 <strong>98.1%가 캐시 읽기</strong>였다 — 총계로는 grok의 31배지만 비캐시 기준으로는 4.6배다. 어느 쪽을 보느냐로 결론이 7배 달라지므로, 비교에는 비캐시 합을 쓴다.</p>
+<figure class="chart"><figcaption>총 토큰 중 비캐시가 차지하는 비율</figcaption>
+<svg viewBox="0 0 720 218" role="img" aria-label="총 토큰 중 비캐시가 차지하는 비율">
+<text x="156" y="20.0" text-anchor="end" class="cat">grok-4.5</text><rect x="168" y="6" width="478" height="18" rx="4" fill="var(--muted-fill)"/><rect x="168" y="6" width="58.5" height="18" rx="4" fill="var(--s3)"/><text x="656" y="20.0" class="val">12.7%</text>
+<text x="156" y="62.0" text-anchor="end" class="cat">gpt-5.6-sol</text><rect x="168" y="48" width="478" height="18" rx="4" fill="var(--muted-fill)"/><rect x="168" y="48" width="24.9" height="18" rx="4" fill="var(--s1)"/><text x="656" y="62.0" class="val">5.6%</text>
+<text x="156" y="104.0" text-anchor="end" class="cat">claude-opus-5 · claude-opus5-high-run2</text><rect x="168" y="90" width="478" height="18" rx="4" fill="var(--muted-fill)"/><rect x="168" y="90" width="23.6" height="18" rx="4" fill="var(--s2)"/><text x="656" y="104.0" class="val">5.4%</text>
+<text x="156" y="146.0" text-anchor="end" class="cat">claude-fable-5</text><rect x="168" y="132" width="478" height="18" rx="4" fill="var(--muted-fill)"/><rect x="168" y="132" width="17.1" height="18" rx="4" fill="var(--s4)"/><text x="656" y="146.0" class="val">4.0%</text>
+<text x="156" y="188.0" text-anchor="end" class="cat">claude-opus-5 · claude-opus5-high</text><rect x="168" y="174" width="478" height="18" rx="4" fill="var(--muted-fill)"/><rect x="168" y="174" width="7.1" height="18" rx="4" fill="var(--s2)"/><text x="656" y="188.0" class="val">1.9%</text>
+</svg>
+<p class="legend"><span class="sw" style="background:var(--s1)"></span>비캐시 (신규 입력 + 캐시 쓰기 + 출력) <span class="sw" style="background:var(--muted-fill)"></span>캐시 읽기</p>
+<p class="note">비캐시 = 신규 입력 + 캐시 쓰기 + 출력. 모델이 실제로 새로 처리한 양이다. 비율이 낮을수록 같은 문맥을 여러 턴에 걸쳐 반복해 읽었다는 뜻이다. CLI마다 input_tokens 정의가 달라(codex 는 캐시 포함, claude·grok 은 제외) 생성기가 정규화했다.</p>
+</figure>
+<figure class="chart"><figcaption>비캐시 토큰 — 모델이 실제로 새로 처리한 양</figcaption>
+<svg viewBox="0 0 720 228" role="img" aria-label="비캐시 토큰 — 모델이 실제로 새로 처리한 양">
+<text x="156" y="22.0" text-anchor="end" class="cat">grok-4.5</text><rect x="168" y="7" width="98.1" height="20" rx="4" fill="var(--s3)"/><text x="276.1" y="22.0" class="val">131,492</text>
+<text x="156" y="66.0" text-anchor="end" class="cat">gpt-5.6-sol</text><rect x="168" y="51" width="191.1" height="20" rx="4" fill="var(--s1)"/><text x="369.1" y="66.0" class="val">256,181</text>
+<text x="156" y="110.0" text-anchor="end" class="cat">claude-fable-5</text><rect x="168" y="95" width="225.0" height="20" rx="4" fill="var(--s4)"/><text x="403.0" y="110.0" class="val">301,485</text>
+<text x="156" y="154.0" text-anchor="end" class="cat">claude-opus-5 · claude-opus5-high-run2</text><rect x="168" y="139" width="273.3" height="20" rx="4" fill="var(--s2)"/><text x="451.3" y="154.0" class="val">366,268</text>
+<text x="156" y="198.0" text-anchor="end" class="cat">claude-opus-5 · claude-opus5-high</text><rect x="168" y="183" width="456.0" height="20" rx="4" fill="var(--s2)"/><text x="634.0" y="198.0" class="val">611,136</text>
+</svg>
+</figure>
+<figure class="chart"><figcaption>출력 토큰 — 모델이 생성한 양</figcaption>
+<svg viewBox="0 0 720 228" role="img" aria-label="출력 토큰 — 모델이 생성한 양">
+<text x="156" y="22.0" text-anchor="end" class="cat">grok-4.5</text><rect x="168" y="7" width="92.1" height="20" rx="4" fill="var(--s3)"/><text x="270.1" y="22.0" class="val">49,027</text>
+<text x="156" y="66.0" text-anchor="end" class="cat">gpt-5.6-sol</text><rect x="168" y="51" width="118.0" height="20" rx="4" fill="var(--s1)"/><text x="296.0" y="66.0" class="val">62,788</text>
+<text x="156" y="110.0" text-anchor="end" class="cat">claude-fable-5</text><rect x="168" y="95" width="245.6" height="20" rx="4" fill="var(--s4)"/><text x="423.6" y="110.0" class="val">130,700</text>
+<text x="156" y="154.0" text-anchor="end" class="cat">claude-opus-5 · claude-opus5-high-run2</text><rect x="168" y="139" width="333.2" height="20" rx="4" fill="var(--s2)"/><text x="511.2" y="154.0" class="val">177,301</text>
+<text x="156" y="198.0" text-anchor="end" class="cat">claude-opus-5 · claude-opus5-high</text><rect x="168" y="183" width="456.0" height="20" rx="4" fill="var(--s2)"/><text x="634.0" y="198.0" class="val">242,674</text>
+</svg>
+</figure>
+<h3>전체 내역</h3><div class='scroll'><table><thead><tr><th>모델</th><th>신규 입력</th><th>캐시 쓰기</th><th>출력</th><th>비캐시 합</th><th>캐시 읽기</th><th>총계</th><th>비캐시%</th></tr></thead><tbody>
+<tr><td><code>grok-4.5</code></td><td>82,465</td><td>0</td><td>49,027</td><td class="win">131,492</td><td>907,904</td><td>1,039,396</td><td>12.7%</td></tr>
+<tr><td><code>gpt-5.6-sol</code></td><td>193,393</td><td>0</td><td>62,788</td><td class="win">256,181</td><td>4,298,240</td><td>4,554,421</td><td>5.6%</td></tr>
+<tr><td><code>claude-fable-5</code></td><td>110</td><td>170,675</td><td>130,700</td><td class="win">301,485</td><td>7,229,549</td><td>7,531,034</td><td>4.0%</td></tr>
+<tr><td><code>claude-opus-5 · claude-opus5-high-run2</code></td><td>102</td><td>188,865</td><td>177,301</td><td class="win">366,268</td><td>6,473,210</td><td>6,839,478</td><td>5.4%</td></tr>
+<tr><td><code>claude-opus-5 · claude-opus5-high</code></td><td>280</td><td>368,182</td><td>242,674</td><td class="win">611,136</td><td>31,539,590</td><td>32,150,726</td><td>1.9%</td></tr>
+</tbody></table></div>
+<h3>생성 효율</h3><div class='scroll'><table><thead><tr><th>모델</th><th>출력 토큰</th><th>산출 코드</th><th>출력/줄</th><th>턴</th></tr></thead><tbody>
+<tr><td><code>grok-4.5</code></td><td>49,027</td><td>5,078줄</td><td class="win">9.7</td><td>17</td></tr>
+<tr><td><code>gpt-5.6-sol</code></td><td>62,788</td><td>4,173줄</td><td class="win">15.0</td><td>N/A</td></tr>
+<tr><td><code>claude-opus-5 · claude-opus5-high-run2</code></td><td>177,301</td><td>7,578줄</td><td class="win">23.4</td><td>55</td></tr>
+<tr><td><code>claude-opus-5 · claude-opus5-high</code></td><td>242,674</td><td>8,293줄</td><td class="win">29.3</td><td>153</td></tr>
+<tr><td><code>claude-fable-5</code></td><td>130,700</td><td>4,416줄</td><td class="win">29.6</td><td>82</td></tr>
+</tbody></table></div>
+<h2>역법 정확도 — 다섯 구현이 동일했다</h2>
+<p>가장 어려운 기술 요소였는데 <strong>변별력이 전혀 없었다.</strong> 다섯 <code>ephemeris.js</code> 를 직접 import 해 수치를 교차 비교했다.</p><div class="scroll"><table><thead><tr><th>측정</th><th>결과</th></tr></thead><tbody><tr><td>행성 일심황경 상호 편차 (수성·지구·목성·해왕성, 2000~2030, 30일 간격)</td><td><strong>0.0000°</strong> — 다섯 전원</td></tr><tr><td>삭망월 (망 통과 시각 이분법, 122회 측정, 이론 29.530589일)</td><td>오차 <strong>4.44 ~ 4.56분</strong> — 다섯 전원</td></tr><tr><td>달 황경 상호 편차 (2000~2010, 3653일)</td><td>최대 <strong>0.14°</strong> — 스펙 요구 0.5° 이내</td></tr></tbody></table></div><p>다섯 모두 JPL J2000 궤도요소를 정확히 구현했다. 달 계산은 opus·grok·fable 이 Meeus Ch.47 완전 급수(89~120항), sol 이 Schlyter 계열 축약(12항)을 썼지만 교육용 정밀도에서는 차이가 드러나지 않았다. opus 만 세차 보정(<code>precessionInLongitude</code>)으로 J2000 좌표계에 맞췄고 나머지는 그날의 평균분점 기준이다 — 둘 다 타당한 관례이며, 10년 구간 0.14° 차이의 원인이다.</p>
+<h2>시각 검증 — 여기서 전부 갈렸다</h2>
+<p>다섯 산출물의 <code>dist</code> 빌드를 각각 정적 서버로 띄우고 <strong>동일한 뷰포트</strong>에서 브라우저로 열었다.</p><h3 style="color:var(--good)">정상 — gpt-5.6-sol · claude-fable-5</h3><div class="shots two"><figure class="shot"><img src="screenshots/sol.jpg" alt="gpt-5.6-sol 렌더링"><p><strong>gpt-5.6-sol</strong> — 달 인셋 패널에 <strong>‘태양 방향’ 화살표 주석</strong>까지 있다. 스펙의 “왜 그 위상으로 보이는지”를 가장 직접적으로 만족시킨 구현. 테스트한 두 뷰포트 모두 정상.</p></figure><figure class="shot"><img src="screenshots/fable5.jpg" alt="claude-fable-5 렌더링"><p><strong>claude-fable-5</strong> — 다섯 중 화면 완성도가 가장 높다. 코로나 글로우, 흐르는 궤도광, 소행성대, 대기 산란이 모두 살아 있으면서 과하지 않다. 두 뷰포트 모두 정상.</p></figure></div><h3 style="color:var(--critical)">파손 — claude-opus-5 (두 실행 모두)</h3><div class="shots two"><figure class="shot"><img src="screenshots/opus5-run1.jpg" alt="opus 1회차 파손"><p><strong>1회차 · 1456×816</strong> — 라벨과 UI 는 그리는데 태양·행성·궤도가 전부 사라진다. 콘솔 에러도 없다. <strong>같은 빌드가 1440×980 에서는 완벽하게 렌더링된다</strong> — 뷰포트 의존 결함이다. 스펙 68행 “모바일에서도 최소한 안 깨지게” 위반.</p></figure><figure class="shot"><img src="screenshots/opus5-run2.jpg" alt="opus 2회차 파손"><p><strong>2회차</strong> — 이번엔 태양 블룸이 화면 전체를 덮는다. 1회차와 달리 <strong>두 뷰포트 모두</strong>에서 동일하게 깨진다. 같은 모델이 두 번 다른 방식으로 후처리에서 실패했다.</p></figure></div><h3 style="color:var(--critical)">파손 — grok-4.5</h3><div class="shots"><figure class="shot"><img src="screenshots/grok45.jpg" alt="grok 파손"><p><strong>스펙이 문자 그대로 경고한 실패 모드에 그대로 빠졌다.</strong> 스펙 55·58행: “fract 래핑 금지 — 화면 밖 소스는 클램프로 버릴 것, 안 그러면 화면 전체에 고스트 타일링됨”, “threshold 를 너무 낮추면 궤도 빛 펄스가 전부 고스트로 번져 사이키델릭해짐”. 무지개색 고스트가 화면을 덮어 태양계가 거의 보이지 않는다. 18초 후에도 그대로다.</p></figure></div><p>추가로 grok 은 달 패널이 <code>보름달 / 조명률 99.2%</code> 라고 표시하면서 달을 <strong>거의 검은 원</strong>으로 그린다. 99.2% 조명이면 꽉 찬 밝은 원이어야 한다 — 핵심 교육 기능이 정확히 반대로 동작한다.</p>
+<h2>자동 검증이 놓친 것</h2>
+<div class="scroll"><table><thead><tr><th>체크</th><th>결과</th><th>실제</th></tr></thead><tbody><tr><td><code>npm run build</code></td><td>5/5 통과</td><td>진짜 통과</td></tr><tr><td><code>npm run selftest</code> (역법)</td><td>5/5 통과</td><td>진짜 통과 — 위 §역법 참조</td></tr><tr><td><code>dist/</code> 생성</td><td>5/5 통과</td><td>진짜 통과</td></tr><tr><td>preview 200 응답</td><td>5/5 통과</td><td>진짜 통과</td></tr><tr><td><strong>실제로 보이는가</strong></td><td>—</td><td><strong>2승 3패 · 자동 검증 불가</strong></td></tr></tbody></table></div><p>WebGL 렌더 결과는 픽셀을 봐야만 알 수 있다. 이 과제에서 순위를 결정한 결함은 <strong>전부</strong> 자동 검증의 사각지대에 있었다. UI·그래픽 과제에서 시각 검증을 생략하면 벤치마크가 성립하지 않는다.</p><p>흥미로운 대비: opus-5 1회차는 <strong>스스로 브라우저를 띄워 17장을 촬영하고 후처리 on/off ablation 까지 돌린</strong> 유일한 실행이었다(<code>.smoke/</code> 에 보존). 그런데도 결함을 놓쳤다 — 자기가 쓴 창 크기 하나에서만 봤기 때문이다.</p>
+<h2>품질 심사</h2>
+<p>벤더를 모르는 블라인드 라벨로 코드를 읽고 채점한 뒤 공개했다. 정확성·견고성은 스크린샷이라는 객관 증거에 근거하고, 코드 품질·완성도는 주관이다. opus 두 실행은 같은 모델이므로 같은 색으로 표시했다.</p>
+<figure class="chart"><figcaption>축별 점수 (각 10점)</figcaption>
+<svg viewBox="0 0 720 788" role="img" aria-label="축별 점수 (각 10점)">
+<text x="138" y="82.0" text-anchor="end" class="cat">요구사항 충족도</text>
+<rect x="150" y="8" width="450.0" height="16" rx="4" fill="var(--s4)"/><text x="608.0" y="20.0" class="val sm">9</text>
+<rect x="150" y="34" width="450.0" height="16" rx="4" fill="var(--s1)"/><text x="608.0" y="46.0" class="val sm">9</text>
+<rect x="150" y="60" width="450.0" height="16" rx="4" fill="var(--s2)"/><text x="608.0" y="72.0" class="val sm">9</text>
+<rect x="150" y="86" width="450.0" height="16" rx="4" fill="var(--s2)"/><text x="608.0" y="98.0" class="val sm">9</text>
+<rect x="150" y="112" width="400.0" height="16" rx="4" fill="var(--s3)"/><text x="558.0" y="124.0" class="val sm">8</text>
+<text x="138" y="238.0" text-anchor="end" class="cat">정확성</text>
+<rect x="150" y="164" width="450.0" height="16" rx="4" fill="var(--s4)"/><text x="608.0" y="176.0" class="val sm">9</text>
+<rect x="150" y="190" width="450.0" height="16" rx="4" fill="var(--s1)"/><text x="608.0" y="202.0" class="val sm">9</text>
+<rect x="150" y="216" width="250.0" height="16" rx="4" fill="var(--s2)"/><text x="408.0" y="228.0" class="val sm">5</text>
+<rect x="150" y="242" width="250.0" height="16" rx="4" fill="var(--s2)"/><text x="408.0" y="254.0" class="val sm">5</text>
+<rect x="150" y="268" width="200.0" height="16" rx="4" fill="var(--s3)"/><text x="358.0" y="280.0" class="val sm">4</text>
+<text x="138" y="394.0" text-anchor="end" class="cat">견고성</text>
+<rect x="150" y="320" width="450.0" height="16" rx="4" fill="var(--s4)"/><text x="608.0" y="332.0" class="val sm">9</text>
+<rect x="150" y="346" width="450.0" height="16" rx="4" fill="var(--s1)"/><text x="608.0" y="358.0" class="val sm">9</text>
+<rect x="150" y="372" width="250.0" height="16" rx="4" fill="var(--s2)"/><text x="408.0" y="384.0" class="val sm">5</text>
+<rect x="150" y="398" width="200.0" height="16" rx="4" fill="var(--s2)"/><text x="358.0" y="410.0" class="val sm">4</text>
+<rect x="150" y="424" width="250.0" height="16" rx="4" fill="var(--s3)"/><text x="408.0" y="436.0" class="val sm">5</text>
+<text x="138" y="550.0" text-anchor="end" class="cat">코드 품질</text>
+<rect x="150" y="476" width="450.0" height="16" rx="4" fill="var(--s4)"/><text x="608.0" y="488.0" class="val sm">9</text>
+<rect x="150" y="502" width="400.0" height="16" rx="4" fill="var(--s1)"/><text x="558.0" y="514.0" class="val sm">8</text>
+<rect x="150" y="528" width="450.0" height="16" rx="4" fill="var(--s2)"/><text x="608.0" y="540.0" class="val sm">9</text>
+<rect x="150" y="554" width="450.0" height="16" rx="4" fill="var(--s2)"/><text x="608.0" y="566.0" class="val sm">9</text>
+<rect x="150" y="580" width="400.0" height="16" rx="4" fill="var(--s3)"/><text x="558.0" y="592.0" class="val sm">8</text>
+<text x="138" y="706.0" text-anchor="end" class="cat">완성도</text>
+<rect x="150" y="632" width="400.0" height="16" rx="4" fill="var(--s4)"/><text x="558.0" y="644.0" class="val sm">8</text>
+<rect x="150" y="658" width="400.0" height="16" rx="4" fill="var(--s1)"/><text x="558.0" y="670.0" class="val sm">8</text>
+<rect x="150" y="684" width="400.0" height="16" rx="4" fill="var(--s2)"/><text x="558.0" y="696.0" class="val sm">8</text>
+<rect x="150" y="710" width="450.0" height="16" rx="4" fill="var(--s2)"/><text x="608.0" y="722.0" class="val sm">9</text>
+<rect x="150" y="736" width="300.0" height="16" rx="4" fill="var(--s3)"/><text x="458.0" y="748.0" class="val sm">6</text>
+</svg>
+<p class="legend"><span class="sw" style="background:var(--s4)"></span>claude-fable-5 <span class="sw" style="background:var(--s1)"></span>gpt-5.6-sol <span class="sw" style="background:var(--s2)"></span>claude-opus-5 · claude-opus5-high-run2 <span class="sw" style="background:var(--s2)"></span>claude-opus-5 · claude-opus5-high <span class="sw" style="background:var(--s3)"></span>grok-4.5 · 각 축 10점 만점</p>
+</figure>
+<div class='scroll'><table><thead><tr><th>축</th><th>claude-fable-5</th><th>gpt-5.6-sol</th><th>claude-opus-5 · claude-opus5-high-run2</th><th>claude-opus-5 · claude-opus5-high</th><th>grok-4.5</th></tr></thead><tbody>
+<tr><td>요구사항 충족도</td><td>9</td><td>9</td><td>9</td><td>9</td><td>8</td></tr>
+<tr><td>정확성</td><td>9</td><td>9</td><td>5</td><td>5</td><td>4</td></tr>
+<tr><td>견고성</td><td>9</td><td>9</td><td>5</td><td>4</td><td>5</td></tr>
+<tr><td>코드 품질</td><td>9</td><td>8</td><td>9</td><td>9</td><td>8</td></tr>
+<tr><td>완성도</td><td>8</td><td>8</td><td>8</td><td>9</td><td>6</td></tr>
+<tr><td><strong>합계</strong></td><td class="win">44/50</td><td class="win">43/50</td><td class="win">36/50</td><td class="win">36/50</td><td class="win">31/50</td></tr>
+</tbody></table></div>
+<h3>claude-fable-5 — 44/50</h3><ul><li><strong>장점</strong> — 다섯 중 화면 완성도가 가장 높으면서 <em>동시에</em> 정상 동작한다. 1회 시도 32.9분, 타임아웃 없이 자체 종료. 전용 렌즈플레어 패스를 실제 렌더 타깃으로 나눠 구현했고(<code>src/scene.js:127</code>), <code>src/moonview.js:16</code> 은 메인 씬 축소가 아니라 고정 달 표면 + 이동 광원으로 전용 관측 뷰를 만든다.</li><li><strong>단점</strong> — 자체 시각 검증 흔적이 없다. 코드량(4,416줄)은 중간이고 opus 만큼 모듈이 세분화되어 있지는 않다.</li></ul>
+<h3>gpt-5.6-sol — 43/50</h3><ul><li><strong>장점</strong> — 두 뷰포트 모두 정상. 달 패널의 ‘태양 방향’ 주석은 스펙 의도를 가장 잘 읽은 부분이다. 4,173줄로 가장 간결하면서 기능은 다 들어있고, 비용도 가장 낮은 축(~$5.00).</li><li><strong>단점</strong> — <code>style.css</code> 가 1,270줄로 전체의 30%. 역법이 12항 축약이라 장기 정밀도는 다섯 중 가장 낮다(교육용으론 무관). 자체 검증 흔적 없음.</li></ul>
+<h3>claude-opus-5 · claude-opus5-high-run2 — 36/50</h3><ul><li><strong>장점</strong> — 코드 구조가 가장 좋다. 7,578줄에 후처리 전용 모듈 분리, 상세한 selftest. 정상 상태에서 35.7분 1회 시도로 완주해 1회차의 120분이 인프라 장애였음을 확정했다.</li><li><strong>단점</strong> — 태양 블룸이 화면을 덮어 두 뷰포트 모두에서 사용 불가. 스펙이 요구한 “태양 코어만 추출” 을 지키지 못했다. 토큰·비용도 상위권.</li></ul>
+<h3>claude-opus-5 · claude-opus5-high — 36/50</h3><ul><li><strong>장점</strong> — 8,293줄로 가장 많고 구조도 가장 낫다(<code>src/effects/</code> 분리, <code>textures.js</code> 폴백 전용 모듈, 364줄 selftest, 세차 보정). <strong>다섯 중 유일하게 스스로 브라우저를 띄워 17장을 촬영하고 ablation 테스트까지 돌렸다.</strong></li><li><strong>단점</strong> — 뷰포트 의존으로 3D 씬이 통째로 사라진다. 자체 검증을 하고도 창 크기 하나만 봐서 놓쳤다. 시간·토큰 지표는 API 장애로 오염되어 성능 판단에 쓸 수 없다.</li></ul>
+<h3>grok-4.5 — 31/50</h3><ul><li><strong>장점</strong> — 10.3분 / 17턴은 압도적이다. 비캐시 토큰 131,492 로 가장 적고 비용도 $0.73 로 최저. 역법은 Meeus 완전 급수로 가장 정밀한 축.</li><li><strong>단점</strong> — 스펙이 두 곳에서 명시적으로 경고한 렌즈플레어 함정에 그대로 빠졌다. 달 패널이 조명률과 반대로 그려진다. 라벨이 스펙 요구인 <code>CSS2DRenderer</code> 가 아니라 수동 화면 좌표 갱신이다(<code>src/ui.js:208</code>). <strong>속도의 대가가 품질이었다.</strong></li></ul>
+<h2>방법론과 한계</h2>
+<h3>실행 조건</h3><ul><li>CLI: claude 2.1.220 · codex 0.145.0 · grok 0.2.112</li><li>effort 는 전원 <code>high</code>. 일부러 잘못된 값을 넣어 거부 메시지로 유효값을 역확인했다.</li><li>인증: 전부 구독 (claude.ai Max · ChatGPT Plus · grok.com). API 키 아님.</li><li>격리: claude <code>--safe-mode</code> · codex <code>--ignore-user-config</code> · grok <code>--no-memory</code></li></ul><h3>반드시 감안할 것</h3><ol><li><strong>표본이 작다.</strong> 모델당 1회(opus 만 2회)이고, 과제도 하나다. 벤더 간 일반적 우열로 확대 해석하면 안 된다. 다만 opus 를 두 번 돌린 결과 <em>양쪽 다 렌더링이 깨졌다</em>는 점은 우연으로 보기 어렵다.</li><li><strong>opus 1회차는 인프라 장애를 정면으로 맞았다.</strong> 같은 시각 codex·grok 은 영향이 없었다. 시간·토큰 지표를 성능으로 읽으면 안 된다.</li><li><strong>총 토큰은 순위 지표가 아니다.</strong> 캐시 읽기가 지배하고, 캐시 읽기는 턴 수에 비례한다.</li><li><strong>비용은 실지출이 아니다.</strong> 구독 실행이라 실제 추가 청구액은 0원이다. codex 는 비용을 보고하지 않아 공식 단가표(<a href="https://developers.openai.com/api/docs/pricing">developers.openai.com/api/docs/pricing</a>, 표준 요금, 2026-07-28 확인)로 환산했다 — 표에서 <code>~</code> 로 구분된다.</li><li><strong>시각 평가는 두 뷰포트만 봤다.</strong> 모바일 실기기, 다양한 GPU 는 확인하지 않았다.</li><li><strong>품질 점수는 Claude 가 매겼다.</strong> 블라인드로 진행했고 정확성·견고성은 스크린샷 증거에 근거하지만, 자사 모델이 포함된 평가라는 점은 감안해야 한다. 실제로 그 자사 모델 두 실행이 모두 하위권이다.</li><li><strong>Google Antigravity(gemini) 불참.</strong> 토큰을 전혀 보고하지 않아 4대 지표 중 하나를 채울 수 없다.</li></ol>
+<footer>원본 계측 데이터: <code>summary.json</code>, 참가자별 <code>metrics.json</code>(시도별 내역 포함) · <code>verify.json</code>. 이 페이지의 <strong>모든 수치는 <code>build_report.py</code> 가 metrics.json 에서 직접 읽어 생성</strong>했다 — 손으로 옮겨 적은 숫자는 없다.</footer></div></body></html>

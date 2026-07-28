@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#000005" />
+    <meta
+      name="description"
+      content="우리 태양계 탐험 — 오늘 밤 하늘의 실제 행성 배치와 달 위상을 볼 수 있는 어린이 교육용 3D 태양계 시뮬레이터"
+    />
+    <title>우리 태양계 탐험</title>
+  </head>
+  <body>
+    <!-- ── 3D 캔버스 ───────────────────────────────────────────── -->
+    <div id="viewport">
+      <canvas id="scene-canvas"></canvas>
+      <div id="labels"></div>
+    </div>
+
+    <!-- ── 좌상단 타이틀 ───────────────────────────────────────── -->
+    <header id="brand">
+      <h1>우리 태양계 탐험</h1>
+      <p class="sub">SOLAR&nbsp;SYSTEM&nbsp;EXPLORER</p>
+      <p class="hint"><span class="dot"></span>행성을 클릭해 보세요</p>
+    </header>
+
+    <!-- ── 상단 안내 ───────────────────────────────────────────── -->
+    <div id="scale-notice">
+      <strong>실제 비율 아님</strong>
+      <span>거리는 로그로 압축했어요 · 행성 크기 비율은 실제 그대로</span>
+    </div>
+
+    <!-- ── 달 인셋 패널 (항상 표시) ─────────────────────────────── -->
+    <section id="moon-inset" aria-label="지구에서 보는 달">
+      <div class="mi-head">
+        <span class="mi-title">지구에서 보는 달</span>
+        <button id="moon-focus-btn" type="button" title="달로 이동">달 보러가기</button>
+      </div>
+      <div class="mi-body">
+        <div class="mi-canvas-wrap">
+          <canvas id="moon-canvas" width="420" height="420"></canvas>
+          <div class="mi-sunhint"><span id="moon-sun-arrow">☀</span></div>
+        </div>
+        <div class="mi-stats">
+          <div class="mi-phase">
+            <span id="moon-emoji">🌕</span>
+            <span id="moon-phase-name">보름달</span>
+          </div>
+          <dl>
+            <div><dt>조명률</dt><dd id="moon-illum">100%</dd></div>
+            <div><dt>월령</dt><dd id="moon-age">14.8일</dd></div>
+            <div><dt>다음 보름</dt><dd id="moon-nextfull">29일 뒤</dd></div>
+            <div><dt>거리</dt><dd id="moon-dist">384,400 km</dd></div>
+          </dl>
+        </div>
+      </div>
+      <p class="mi-foot" id="moon-foot">달은 항상 같은 면만 지구를 향해요.</p>
+    </section>
+
+    <!-- ── 우측 정보 패널 ──────────────────────────────────────── -->
+    <aside id="info-panel" aria-hidden="true">
+      <button id="info-close" type="button" aria-label="닫기">✕</button>
+      <div id="info-content"></div>
+    </aside>
+
+    <!-- ── 하단 시간/날짜 바 ───────────────────────────────────── -->
+    <footer id="timebar">
+      <div class="tb-row tb-date">
+        <button id="btn-prev-day" type="button" class="tb-btn">◀&nbsp;하루 전</button>
+        <div class="tb-datebox">
+          <span id="date-display">—</span>
+          <span id="date-sub" class="tb-datesub">—</span>
+        </div>
+        <button id="btn-next-day" type="button" class="tb-btn">하루 후&nbsp;▶</button>
+        <button id="btn-today" type="button" class="tb-btn tb-btn-accent">오늘</button>
+      </div>
+      <div class="tb-row tb-time">
+        <button id="btn-play" type="button" class="tb-icon" aria-label="일시정지">
+          <span id="play-icon">❚❚</span>
+        </button>
+        <label class="tb-speed">
+          <input
+            id="speed-slider"
+            type="range"
+            min="0"
+            max="1000"
+            step="1"
+            value="250"
+            aria-label="시간 배속 (1× = 하루 / 초)"
+            title="시간 배속 — 1× 는 1초에 하루가 흐릅니다"
+          />
+        </label>
+        <span id="speed-display" class="tb-speedval"><b>1.0×</b><i>1.0일/초</i></span>
+        <button id="btn-overview" type="button" class="tb-btn tb-btn-ghost">
+          전체 보기 <kbd>ESC</kbd>
+        </button>
+      </div>
+    </footer>
+
+    <!-- ── 로딩 화면 ───────────────────────────────────────────── -->
+    <div id="loader">
+      <div class="ld-inner">
+        <div class="ld-ring"><i></i><i></i><i></i></div>
+        <h2>우리 태양계 탐험</h2>
+        <p id="ld-status">우주를 준비하는 중…</p>
+        <div class="ld-bar"><span id="ld-fill"></span></div>
+        <p class="ld-pct"><span id="ld-pct">0</span>%</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,662 @@
+/* Space3D — 우주선 조종석 HUD 스타일 */
+
+:root {
+  --cyan: #4de8ff;
+  --cyan-dim: rgba(77, 232, 255, 0.55);
+  --amber: #ffc266;
+  --glass: rgba(8, 14, 28, 0.62);
+  --glass-border: rgba(120, 200, 255, 0.18);
+  --text: #dceaf5;
+  --text-dim: #8fa8bd;
+  --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000005;
+  font-family: var(--font);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app canvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+}
+
+.label-layer {
+  position: fixed !important;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ---------------- 천체 라벨 ---------------- */
+
+.body-label {
+  pointer-events: auto;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: var(--cyan-dim);
+  text-shadow: 0 0 8px rgba(77, 232, 255, 0.5), 0 1px 3px #000;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.body-label::before {
+  content: "◈ ";
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.body-label.hover,
+.body-label:hover {
+  color: var(--amber);
+  border-color: rgba(255, 194, 102, 0.45);
+  background: rgba(255, 194, 102, 0.08);
+  text-shadow: 0 0 12px rgba(255, 194, 102, 0.8);
+}
+
+.body-label.selected {
+  color: var(--amber);
+}
+
+/* ---------------- HUD 공통 ---------------- */
+
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hud button,
+#hud input,
+#hud aside,
+#hud .scale-badge {
+  pointer-events: auto;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.kbd {
+  font-size: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+/* ---------------- 좌상단 타이틀 ---------------- */
+
+.hud-topleft {
+  position: absolute;
+  top: 22px;
+  left: 26px;
+}
+
+.hud-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  color: var(--text);
+  text-shadow: 0 0 18px rgba(77, 232, 255, 0.6);
+  border-left: 3px solid var(--cyan);
+  padding-left: 12px;
+}
+
+.hud-hint {
+  margin-top: 7px;
+  padding-left: 15px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+}
+
+/* ---------------- 상단 안내 배지 ---------------- */
+
+.hud-topcenter {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.scale-badge {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--amber);
+  background: rgba(30, 20, 5, 0.55);
+  border: 1px solid rgba(255, 194, 102, 0.3);
+  border-radius: 20px;
+  padding: 6px 16px;
+  backdrop-filter: blur(8px);
+}
+
+/* ---------------- 전체 보기 버튼 ---------------- */
+
+.hud-btn {
+  position: absolute;
+  top: 76px;
+  right: 26px;
+  font-family: var(--font);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--cyan);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 9px 16px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+  z-index: 20;
+}
+
+.hud-btn:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(77, 232, 255, 0.35);
+}
+
+/* ---------------- 하단 시간 바 ---------------- */
+
+#time-bar {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 22px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6), inset 0 0 24px rgba(77, 232, 255, 0.04);
+  pointer-events: auto;
+}
+
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tb-divider {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(transparent, var(--glass-border), transparent);
+}
+
+.tb-btn {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text);
+  background: rgba(77, 232, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 8px 13px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.15s;
+}
+
+.tb-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 12px rgba(77, 232, 255, 0.3);
+}
+
+.tb-btn:active {
+  transform: scale(0.94);
+}
+
+#btn-play {
+  font-size: 17px;
+  width: 44px;
+}
+
+.tb-speed {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#speed-slider {
+  width: 130px;
+  accent-color: var(--cyan);
+  cursor: pointer;
+}
+
+.tb-speed-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+}
+
+#speed-value {
+  color: var(--cyan);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tb-speed-note {
+  color: var(--text-dim);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.tb-date-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 168px;
+}
+
+#date-main {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--amber);
+  text-shadow: 0 0 12px rgba(255, 194, 102, 0.5);
+  white-space: nowrap;
+}
+
+.tb-today {
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 2px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tb-today:hover {
+  color: var(--amber);
+  border-color: var(--amber);
+}
+
+/* ---------------- 달 인셋 패널 ---------------- */
+
+#moon-panel {
+  position: fixed;
+  left: 26px;
+  bottom: 100px;
+  z-index: 12;
+  width: 232px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.55), inset 0 0 30px rgba(77, 232, 255, 0.04);
+  pointer-events: auto;
+  text-align: center;
+}
+
+.moon-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  margin-bottom: 10px;
+}
+
+.moon-panel-sub {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+  margin-top: 2px;
+}
+
+.moon-disc-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.moon-disc {
+  border-radius: 50%;
+  box-shadow: 0 0 26px rgba(200, 220, 255, 0.16), inset 0 0 18px rgba(0, 0, 0, 0.6);
+  background: radial-gradient(circle, #05070d 60%, #02030a 100%);
+}
+
+.moon-phase-name {
+  margin-top: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--amber);
+  text-shadow: 0 0 14px rgba(255, 194, 102, 0.5);
+}
+
+.moon-stats {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.moon-stats > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.moon-stats .k {
+  color: var(--text-dim);
+  letter-spacing: 0.14em;
+}
+
+.moon-stats .v {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ---------------- 정보 패널 (우측 글래스) ---------------- */
+
+#info-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 340px;
+  max-width: 88vw;
+  height: 100%;
+  padding: 84px 24px 30px;
+  background: linear-gradient(270deg, rgba(8, 14, 28, 0.85), rgba(8, 14, 28, 0.55));
+  border-left: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px);
+  overflow-y: auto;
+  z-index: 15;
+}
+
+#info-panel.slide-in {
+  animation: panel-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes panel-in {
+  from {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.stagger {
+  animation: materialize 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 60ms + 150ms);
+}
+
+@keyframes materialize {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.ip-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.ip-emoji {
+  font-size: 40px;
+  filter: drop-shadow(0 0 12px rgba(77, 232, 255, 0.4));
+}
+
+.ip-name {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.ip-name-en {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--cyan);
+  letter-spacing: 0.2em;
+  margin-left: 4px;
+}
+
+.ip-type {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.16em;
+}
+
+.ip-table {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ip-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  padding: 6px 8px 6px 0;
+  white-space: nowrap;
+  vertical-align: top;
+  width: 92px;
+}
+
+.ip-table td {
+  color: var(--text);
+  padding: 6px 0;
+  font-weight: 600;
+}
+
+.ip-table tr {
+  border-bottom: 1px dashed rgba(120, 200, 255, 0.1);
+}
+
+.countup {
+  color: var(--cyan);
+}
+
+.ip-sec-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--amber);
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+}
+
+.ip-facts {
+  margin-top: 20px;
+}
+
+.ip-facts ul {
+  list-style: none;
+}
+
+.ip-facts li {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  padding: 7px 0 7px 18px;
+  position: relative;
+  border-bottom: 1px dashed rgba(120, 200, 255, 0.08);
+}
+
+.ip-facts li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--cyan);
+  font-size: 11px;
+}
+
+.ip-spin {
+  margin-top: 16px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  background: rgba(77, 232, 255, 0.05);
+  border: 1px solid rgba(77, 232, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.ip-moon-why {
+  margin-top: 16px;
+  background: rgba(255, 194, 102, 0.07);
+  border: 1px solid rgba(255, 194, 102, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.ip-moon-why p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* ---------------- 로딩 ---------------- */
+
+#loading {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000005;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s;
+  pointer-events: auto;
+}
+
+#loading.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-inner {
+  text-align: center;
+}
+
+.loading-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.5em;
+  color: var(--text);
+  text-shadow: 0 0 30px rgba(77, 232, 255, 0.8);
+  margin-bottom: 12px;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { text-shadow: 0 0 20px rgba(77, 232, 255, 0.5); }
+  50% { text-shadow: 0 0 44px rgba(77, 232, 255, 1); }
+}
+
+.loading-sub {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: var(--text-dim);
+  margin-bottom: 30px;
+}
+
+.loading-bar {
+  width: 280px;
+  height: 3px;
+  background: rgba(77, 232, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.loading-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--cyan), var(--amber));
+  box-shadow: 0 0 12px var(--cyan);
+  transition: width 0.3s;
+}
+
+.loading-pct {
+  margin-top: 10px;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: var(--cyan-dim);
+}
+
+/* ---------------- 모바일 ---------------- */
+
+@media (max-width: 760px) {
+  .hud-title { font-size: 16px; letter-spacing: 0.22em; }
+  .hud-hint { font-size: 10px; }
+  .hud-topcenter { top: auto; bottom: 96px; width: 94vw; text-align: center; }
+  .scale-badge { font-size: 9px; }
+
+  #time-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 12px;
+    width: 94vw;
+    bottom: 10px;
+  }
+  .tb-divider { display: none; }
+  #speed-slider { width: 90px; }
+  .tb-daybtn { font-size: 11px; padding: 7px 9px; }
+  #date-main { font-size: 14px; }
+  .tb-date-display { min-width: 120px; }
+
+  #moon-panel {
+    left: 10px;
+    bottom: auto;
+    top: 64px;
+    width: 138px;
+    padding: 8px 10px;
+  }
+  .moon-disc { width: 96px !important; height: 96px !important; }
+  .moon-phase-name { font-size: 13px; }
+  .moon-stats > div { font-size: 10px; }
+  .moon-panel-title { font-size: 10px; }
+
+  #info-panel { width: 78vw; padding-top: 64px; }
+  .hud-btn { top: 18px; right: 12px; padding: 7px 10px; font-size: 11px; }
+}
