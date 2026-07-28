@@ -6,7 +6,8 @@
 과제는 **어린이 교육용 3D 태양계 시뮬레이터** — Three.js, 실제 천체 위치 계산,
 하루 단위 날짜 이동, 지구에서 보는 달의 위상.
 
-🎞️ **[발표 덱 (← → 키로 이동) → space3d-benchmark-deck.vercel.app](https://space3d-benchmark-deck.vercel.app)**
+🎬 **[촬영용 16:9 덱 → space3d-video-deck.vercel.app](https://space3d-video-deck.vercel.app)** · [대본](video/script.md)
+🎞️ **[발표 덱 → space3d-benchmark-deck.vercel.app](https://space3d-benchmark-deck.vercel.app)**
 📊 **[상세 리포트 → space3d-benchmark-report.vercel.app](https://space3d-benchmark-report.vercel.app)**
 
 ## 배포된 결과물
@@ -73,7 +74,8 @@ fable5/    claude-fable-5 결과물
 opus5/     claude-opus-5 1회차
 opus5r2/   claude-opus-5 2회차
 grok45/    grok-4.5 결과물
-deck/      발표용 슬라이드 덱 (키보드 전환, 자체완결)
+deck/      발표용 슬라이드 덱 (키보드 전환)
+video/     촬영용 16:9 덱 + 나레이션 대본 (video.json 에서 생성)
 report/    상세 HTML 리포트 (자체완결)
 SPEC.md    과제 스펙
 PROMPT.md  에이전트에 전달된 프롬프트 전문
