@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#000005" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>우리 태양계 탐험</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="loading">
+    <div class="loading-inner">
+      <div class="loading-title">우리 태양계 탐험</div>
+      <div class="loading-bar"><div id="loading-fill"></div></div>
+      <div id="loading-text">우주선 시동 거는 중...</div>
+    </div>
+  </div>
+
+  <canvas id="scene"></canvas>
+
+  <header id="hud-top">
+    <h1>우리 태양계 탐험</h1>
+    <p id="hud-hint">행성을 클릭해 보세요 · 마우스 휠로 확대/축소</p>
+    <p class="scale-note">※ 크기와 거리는 실제 비율이 아니에요</p>
+  </header>
+
+  <button id="btn-overview" hidden>← 전체 보기 (ESC)</button>
+  <button id="btn-info" hidden>ⓘ 정보 보기</button>
+
+  <aside id="info-panel" hidden>
+    <div class="panel-grabber" id="panel-grabber"></div>
+    <button id="panel-close" aria-label="정보 닫기">×</button>
+    <div class="panel-body">
+      <div class="panel-emoji" id="p-emoji"></div>
+      <h2 id="p-name"></h2>
+      <div class="p-eng" id="p-eng"></div>
+      <div class="p-type" id="p-type"></div>
+      <p class="p-desc" id="p-desc"></p>
+      <div class="stats" id="p-stats"></div>
+      <div class="spin-note" id="p-spin"></div>
+      <h3>재미있는 사실</h3>
+      <ul id="p-facts"></ul>
+    </div>
+  </aside>
+
+  <aside id="moon-panel">
+    <div class="moon-title">오늘 밤 달의 모습</div>
+    <div class="moon-sub" id="moon-date">지구에서 보면</div>
+    <canvas id="moon-canvas" width="256" height="256"></canvas>
+    <div class="moon-name" id="moon-name">—</div>
+    <div class="moon-rows">
+      <div><span>조명률</span><b id="moon-illum">—</b></div>
+      <div><span>월령</span><b id="moon-age">—</b></div>
+      <div><span>다음 보름달</span><b id="moon-next">—</b></div>
+    </div>
+  </aside>
+
+  <footer id="time-bar">
+    <button id="btn-pause" title="일시정지/재생">⏸</button>
+    <input type="range" id="speed" min="0" max="4" step="0.01" value="2" />
+    <span id="speed-label">10×</span>
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
