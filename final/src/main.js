@@ -8,6 +8,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 // (스크린-스페이스 렌즈플레어 패스는 사용자 요청으로 제거)
 import { BODIES } from './data.js';
+import { initImpact } from './impact.js';
 
 // ---------------------------------------------------------------- 디바이스 프로파일
 // 터치 기기 = 호버 불가. 레이아웃 기준은 CSS의 하단 시트 미디어쿼리와 동일하게 맞춘다.
@@ -448,10 +449,12 @@ function selectBody(id) {
   const e = bodyMap.get(id);
   if (!e) return;
   if (selected === e) {
-    // 같은 천체 재탭 = 포커스 유지한 채 패널만 다시 열기
-    if (!panelOpen) openPanel();
+    // 같은 천체 재탭 = 포커스 유지한 채 패널만 다시 열기 (충돌 실험 중엔 그대로 둠)
+    if (!panelOpen && !impact.isOpen()) openPanel();
     return;
   }
+  // 다른 천체로 넘어가면 충돌 실험은 조용히 종료 (흔적은 유지)
+  if (impact.isOpen()) impact.close(false);
   selected = e;
   flyT = 0;
   flyFrom.copy(camera.position);
@@ -479,6 +482,7 @@ function closePanel() {
 // 포커스까지 해제 = 전체 보기로 복귀
 function deselect() {
   if (!selected) return;
+  if (impact.isOpen()) impact.close(false);
   selected = null;
   spinRing.visible = false;
   panelOpen = false;
@@ -506,8 +510,9 @@ document.getElementById('panel-close').addEventListener('click', closePanel);
 }
 addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if (panelOpen) closePanel(); // 1단계: 패널만
-  else deselect();             // 2단계: 포커스 해제
+  if (impact.isOpen()) impact.close(true); // 0단계: 충돌 실험 → 정보 패널로 복귀
+  else if (panelOpen) closePanel();        // 1단계: 패널만
+  else deselect();                         // 2단계: 포커스 해제
 });
 
 const easeInOut = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -550,7 +555,7 @@ function openPanel() {
   const items = [
     document.querySelector('.panel-emoji'), document.getElementById('p-name'),
     document.getElementById('p-eng'), document.getElementById('p-type'),
-    document.getElementById('p-desc'),
+    document.getElementById('p-desc'), document.getElementById('btn-impact'),
     ...stats.children, document.getElementById('p-spin'),
     panel.querySelector('h3'), ...facts.children,
   ];
@@ -589,6 +594,18 @@ function countUpNumbers(container) {
     requestAnimationFrame(tick);
   });
 }
+
+// ---------------------------------------------------------------- 소행성 충돌 시뮬레이션
+const impact = initImpact({
+  camera, controls, bodyMap, LOW_POWER,
+  // 충돌 패널을 닫으면 오던 길(정보 패널)로 되돌아간다
+  reopenInfo: () => { if (selected) openPanel(); },
+});
+document.getElementById('btn-impact').addEventListener('click', () => {
+  if (!selected) return;
+  closePanel();          // 정보 패널 자리를 비우고
+  impact.open(selected); // 충돌 실험 시트를 연다
+});
 
 // ---------------------------------------------------------------- 달 위상 패널
 // 삭(신월) 기준시 2000-01-06 18:14 UTC = JD 2451550.1, 삭망월 29.530588853일
@@ -712,7 +729,7 @@ addEventListener('orientationchange', () => setTimeout(resize, 250));
 // 하단 시트가 화면 아래쪽을 가리므로, 포커스 대상을 화면 위쪽으로 올려서 보이게 한다.
 // 시트 높이 비율은 CSS --sheet-h와 동일하게 읽어온다.
 function sheetFraction() {
-  if (!(isSheetLayout() && panelOpen)) return 0;
+  if (!(isSheetLayout() && (panelOpen || impact.sheetOpen()))) return 0;
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--sheet-h').trim();
   const vh = parseFloat(raw) || 46;
   return Math.min(0.62, vh / 100);
@@ -830,6 +847,7 @@ function animate() {
   }
 
   controls.update();
+  impact.update(dt); // 소행성 비행/폭발/카메라 흔들림 (controls 이후에 적용)
   grainPass.uniforms.uTime.value = t;
   composer.render();
   labelRenderer.render(scene, camera);

@@ -1,11 +1,17 @@
 // 태양계 천체 데이터 — 시각 파라미터(압축 스케일) + 실제 과학 데이터(한국어)
 // radius/dist 는 씬 단위(교육용 압축 비율), 과학 수치는 실제 값.
+//
+// phys: 충돌 시뮬레이션용 실제 물리량 (SI 단위)
+//   R: 반지름(m), M: 질량(kg), g: 표면 중력(m/s²), rhoT: 표면(지각) 밀도(kg/m³)
+//   kind: 'star' | 'gas' | 'rock' — 크레이터가 생기는지 여부를 가른다
+//   moi: 관성 모멘트 계수 (I = moi·M·R²), atm: 대기 두께 계수 (지구=1, 없음=0)
 
 export const BODIES = [
   {
     id: 'sun', name: '태양', eng: 'Sun', emoji: '☀️', type: '항성 (별)',
     radius: 14, dist: 0, orbitDays: 0, rotationHours: 609.12, tilt: 7.25, retrograde: false,
     texture: '2k_sun.jpg', color: 0xffcc55,
+    phys: { R: 6.9634e8, M: 1.989e30, g: 274, rhoT: 1408, kind: 'star', moi: 0.07, atm: 0 },
     desc: '태양계의 중심에 있는 커다란 별이에요. 태양계 전체 질량의 99.8%를 차지하고, 빛과 열로 지구의 모든 생명을 살게 해 줘요.',
     stats: {
       '지름': '1,392,700 km (지구의 109배)',
@@ -27,6 +33,7 @@ export const BODIES = [
     id: 'mercury', name: '수성', eng: 'Mercury', emoji: '🪨', type: '암석 행성',
     radius: 1.1, dist: 26, orbitDays: 88, rotationHours: 1407.6, tilt: 0.03, retrograde: false,
     texture: '2k_mercury.jpg', color: 0x9c8e82,
+    phys: { R: 2.4397e6, M: 3.301e23, g: 3.70, rhoT: 2700, kind: 'rock', moi: 0.346, atm: 0 },
     desc: '태양에서 가장 가까운 작은 행성이에요. 대기가 거의 없어서 낮에는 펄펄 끓고 밤에는 꽁꽁 얼어요.',
     stats: {
       '지름': '4,879 km (지구의 0.38배)',
@@ -50,6 +57,7 @@ export const BODIES = [
     id: 'venus', name: '금성', eng: 'Venus', emoji: '🌕', type: '암석 행성',
     radius: 1.9, dist: 36, orbitDays: 224.7, rotationHours: -5832.5, tilt: 177.4, retrograde: true,
     texture: '2k_venus_atmosphere.jpg', color: 0xe6c98a,
+    phys: { R: 6.0518e6, M: 4.867e24, g: 8.87, rhoT: 2800, kind: 'rock', moi: 0.337, atm: 5 },
     desc: '두꺼운 이산화탄소 구름에 덮인, 태양계에서 가장 뜨거운 행성이에요. 새벽과 저녁 하늘에서 가장 밝게 빛나 "샛별"이라고 불러요.',
     stats: {
       '지름': '12,104 km (지구의 0.95배)',
@@ -73,6 +81,7 @@ export const BODIES = [
     id: 'earth', name: '지구', eng: 'Earth', emoji: '🌍', type: '암석 행성',
     radius: 2, dist: 47, orbitDays: 365.25, rotationHours: 23.93, tilt: 23.44, retrograde: false,
     texture: '2k_earth_daymap.jpg', night: '2k_earth_nightmap.jpg', clouds: '2k_earth_clouds.jpg', color: 0x4d7fd1,
+    phys: { R: 6.371e6, M: 5.972e24, g: 9.81, rhoT: 2750, kind: 'rock', moi: 0.331, atm: 1, ocean: true },
     desc: '우리가 사는 아름다운 푸른 행성이에요. 지금까지 알려진 우주에서 생명이 사는 유일한 곳이랍니다.',
     stats: {
       '지름': '12,742 km',
@@ -96,6 +105,7 @@ export const BODIES = [
     id: 'moon', name: '달', eng: 'Moon', emoji: '🌙', type: '위성',
     radius: 0.55, dist: 4.2, orbitDays: 27.3, rotationHours: 655.7, tilt: 6.68, retrograde: false,
     parent: 'earth', texture: '2k_moon.jpg', color: 0xbdbdbd,
+    phys: { R: 1.7374e6, M: 7.342e22, g: 1.62, rhoT: 2500, kind: 'rock', moi: 0.394, atm: 0 },
     desc: '지구의 하나뿐인 위성이에요. 사람이 직접 가 본 유일한 다른 세계이기도 해요.',
     stats: {
       '지름': '3,474 km (지구의 0.27배)',
@@ -118,6 +128,7 @@ export const BODIES = [
     id: 'mars', name: '화성', eng: 'Mars', emoji: '🔴', type: '암석 행성',
     radius: 1.4, dist: 60, orbitDays: 687, rotationHours: 24.62, tilt: 25.19, retrograde: false,
     texture: '2k_mars.jpg', color: 0xc1592f,
+    phys: { R: 3.3895e6, M: 6.417e23, g: 3.71, rhoT: 2800, kind: 'rock', moi: 0.366, atm: 0.1 },
     desc: '녹슨 철 때문에 붉게 보이는 "붉은 행성"이에요. 사람이 다음으로 갈 행성으로 가장 많이 연구되고 있어요.',
     stats: {
       '지름': '6,779 km (지구의 0.53배)',
@@ -141,6 +152,7 @@ export const BODIES = [
     id: 'jupiter', name: '목성', eng: 'Jupiter', emoji: '🟠', type: '가스 행성',
     radius: 7, dist: 88, orbitDays: 4333, rotationHours: 9.93, tilt: 3.13, retrograde: false,
     texture: '2k_jupiter.jpg', color: 0xc9a47a,
+    phys: { R: 6.9911e7, M: 1.898e27, g: 24.79, rhoT: 1326, kind: 'gas', moi: 0.254, atm: 10 },
     desc: '태양계에서 가장 큰 행성이에요. 줄무늬 구름과 지구보다 큰 태풍 "대적점"이 유명해요.',
     stats: {
       '지름': '139,820 km (지구의 11배)',
@@ -164,6 +176,7 @@ export const BODIES = [
     id: 'saturn', name: '토성', eng: 'Saturn', emoji: '🪐', type: '가스 행성',
     radius: 6, dist: 116, orbitDays: 10759, rotationHours: 10.7, tilt: 26.73, retrograde: false,
     texture: '2k_saturn.jpg', ring: '2k_saturn_ring_alpha.png', color: 0xd9c08b,
+    phys: { R: 5.8232e7, M: 5.683e26, g: 10.44, rhoT: 687, kind: 'gas', moi: 0.21, atm: 10 },
     desc: '아름다운 고리를 가진 행성이에요. 고리는 수십억 개의 얼음과 바위 조각으로 이루어져 있어요.',
     stats: {
       '지름': '116,460 km (지구의 9.4배)',
@@ -187,6 +200,7 @@ export const BODIES = [
     id: 'uranus', name: '천왕성', eng: 'Uranus', emoji: '🔵', type: '얼음 거대 행성',
     radius: 3.4, dist: 142, orbitDays: 30687, rotationHours: -17.24, tilt: 97.77, retrograde: true,
     texture: '2k_uranus.jpg', ring: null, color: 0x9fd8dd,
+    phys: { R: 2.5362e7, M: 8.681e25, g: 8.87, rhoT: 1271, kind: 'gas', moi: 0.225, atm: 10 },
     desc: '옆으로 완전히 누워서 도는 특이한 청록색 행성이에요. 메탄 가스 때문에 예쁜 청록색으로 보여요.',
     stats: {
       '지름': '50,724 km (지구의 4배)',
@@ -210,6 +224,7 @@ export const BODIES = [
     id: 'neptune', name: '해왕성', eng: 'Neptune', emoji: '💙', type: '얼음 거대 행성',
     radius: 3.3, dist: 165, orbitDays: 60190, rotationHours: 16.11, tilt: 28.32, retrograde: false,
     texture: '2k_neptune.jpg', color: 0x3f66d4,
+    phys: { R: 2.4622e7, M: 1.024e26, g: 11.15, rhoT: 1638, kind: 'gas', moi: 0.23, atm: 10 },
     desc: '태양에서 가장 먼 진한 파란색 행성이에요. 태양계에서 가장 강한 바람이 불어요.',
     stats: {
       '지름': '49,244 km (지구의 3.9배)',

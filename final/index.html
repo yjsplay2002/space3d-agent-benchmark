@@ -38,10 +38,66 @@
       <div class="p-eng" id="p-eng"></div>
       <div class="p-type" id="p-type"></div>
       <p class="p-desc" id="p-desc"></p>
+      <button id="btn-impact">☄️ 소행성 충돌시키기</button>
       <div class="stats" id="p-stats"></div>
       <div class="spin-note" id="p-spin"></div>
       <h3>재미있는 사실</h3>
       <ul id="p-facts"></ul>
+    </div>
+  </aside>
+
+  <!-- 소행성 충돌 실험 패널 — 데스크톱: 우측 사이드 / 모바일: 하단 시트 -->
+  <aside id="impact-panel" hidden>
+    <div class="panel-grabber" id="impact-grabber"></div>
+    <button id="impact-close" aria-label="충돌 실험 닫기">×</button>
+    <div class="panel-body impact-body">
+
+      <div id="impact-controls">
+        <div class="impact-title">☄️ 소행성 충돌 실험</div>
+        <div class="impact-target" id="impact-target"></div>
+
+        <div class="ctl-row">
+          <label>소행성 크기(지름) <b id="val-size">1 km</b></label>
+          <input type="range" id="in-size" min="0" max="1" step="0.001" value="0.4" />
+        </div>
+        <div class="ctl-row">
+          <label>충돌 속도 <b id="val-speed">20 km/s</b></label>
+          <input type="range" id="in-speed" min="11" max="72" step="1" value="20" />
+        </div>
+        <div class="ctl-row">
+          <label>충돌 각도 <b id="val-angle">45°</b></label>
+          <input type="range" id="in-angle" min="15" max="90" step="1" value="45" />
+        </div>
+
+        <div class="ctl-row">
+          <label>무엇으로 된 소행성인가요?</label>
+          <div class="comp-group" id="comp-group">
+            <button class="comp-btn active" data-comp="rock">🪨 암석</button>
+            <button class="comp-btn" data-comp="iron">⚙️ 철</button>
+            <button class="comp-btn" data-comp="ice">🧊 얼음</button>
+          </div>
+        </div>
+
+        <div class="impact-live">
+          <div><span>소행성 무게</span><b id="live-mass">—</b></div>
+          <div><span>충돌 에너지</span><b id="live-energy">—</b></div>
+        </div>
+
+        <button id="btn-fire">☄️ 발사!</button>
+        <div class="impact-note" id="impact-note" hidden></div>
+      </div>
+
+      <div id="impact-result" hidden>
+        <div class="grade-badge" id="grade-badge"></div>
+        <p class="grade-desc" id="grade-desc"></p>
+        <div class="stats" id="impact-stats"></div>
+        <div class="spin-note impact-changes" id="impact-changes"></div>
+        <div class="impact-actions">
+          <button id="btn-again">🔁 다시 하기</button>
+          <button id="btn-restore">✨ 원래대로</button>
+        </div>
+      </div>
+
     </div>
   </aside>
 
