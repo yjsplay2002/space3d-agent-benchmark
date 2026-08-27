@@ -247,6 +247,48 @@ body.focused.panel-closed #btn-overview { right: 28px; top: calc(74px + var(--sa
   font-variant-numeric: tabular-nums;
 }
 #speed { width: 170px; accent-color: var(--cyan); cursor: pointer; }
+.tb-group { display: flex; align-items: center; gap: 14px; }
+
+/* 날짜 넘기기 — 하루 전 / 오늘 / 하루 후 */
+.tb-daybtn {
+  font-family: inherit; font-size: 13px; color: var(--text);
+  background: rgba(77, 232, 255, 0.08); border: 1px solid var(--glass-border);
+  border-radius: 8px; padding: 10px 12px; cursor: pointer;
+  letter-spacing: 0.06em; white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.15s;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.tb-daybtn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 12px rgba(77, 232, 255, 0.3); }
+.tb-daybtn:active { transform: scale(0.94); }
+.tb-date-display { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 150px; }
+#date-main {
+  font-size: 16px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--amber); text-shadow: 0 0 12px rgba(255, 194, 102, 0.5);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+#btn-today {
+  font-family: inherit; font-size: 11px; letter-spacing: 0.2em;
+  color: var(--text-dim); background: none;
+  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px;
+  padding: 5px 18px; min-height: 28px; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s, opacity 0.15s;
+}
+#btn-today:hover:not(:disabled) { color: var(--amber); border-color: var(--amber); box-shadow: 0 0 10px rgba(255, 194, 102, 0.3); }
+#btn-today:active:not(:disabled) { transform: scale(0.94); }
+#btn-today:disabled { opacity: 0.35; cursor: default; }
+
+/* 좁은 화면 — 타임바를 두 줄로 쌓는다 (재생/속도 줄 + 날짜 줄) */
+@media (max-width: 1080px) {
+  #time-bar { flex-direction: column; gap: 8px; padding: 9px 14px; }
+  .tb-divider-mid {
+    width: auto; height: 1px; align-self: stretch;
+    background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+  }
+  #speed { width: 150px; }
+  .tb-date-display { min-width: 132px; }
+  #date-main { font-size: 14px; }
+  #btn-today { min-height: 26px; padding: 4px 16px; }
+}
 
 /* ---------- 달 위상 패널 ---------- */
 #moon-panel {
@@ -398,17 +440,18 @@ body.focused.panel-closed #btn-overview { right: 28px; top: calc(74px + var(--sa
   /* 시트가 열리면 타임바를 시트 위로 밀어 올림 */
   #time-bar {
     bottom: calc(14px + var(--safe-b));
-    gap: 10px; padding: 8px 14px;
+    gap: 8px; padding: 8px 12px;
   }
   #speed { width: 110px; }
-  .tb-divider { height: 32px; }
+  .tb-play .tb-divider { height: 32px; }
+  .tb-daybtn { font-size: 12px; padding: 9px 10px; }
   body.panel-open #time-bar {
     transform: translateX(-50%) translateY(calc(-1 * var(--sheet-h) + 2px));
   }
 
-  /* 달 패널 — 좁은 화면에선 축소, 시트가 열리면 가려지므로 숨김 */
+  /* 달 패널 — 좁은 화면에선 축소, 두 줄 타임바 위로 올림, 시트가 열리면 가려지므로 숨김 */
   #moon-panel {
-    left: 12px; bottom: calc(70px + var(--safe-b));
+    left: 12px; bottom: calc(138px + var(--safe-b));
     width: 130px; padding: 10px 10px 8px; border-radius: 12px;
   }
   .moon-title { font-size: 10px; letter-spacing: 0.1em; }
@@ -427,10 +470,19 @@ body.focused.panel-closed #btn-overview { right: 28px; top: calc(74px + var(--sa
   #moon-panel { display: none; }
 }
 
-/* 아주 낮은 화면(가로 모드 폰) — 시트를 더 낮게 */
+/* 아주 낮은 화면(가로 모드 폰) — 시트를 더 낮게, 타임바는 다시 한 줄로 */
 @media (max-height: 480px) {
   :root { --sheet-h: 62vh; }
   .hud-topcenter { display: none; }
+  #time-bar { flex-direction: row; gap: 12px; padding: 8px 14px; }
+  .tb-divider-mid {
+    width: 1px; height: 32px; align-self: center;
+    background: linear-gradient(transparent, var(--glass-border), transparent);
+  }
+  .tb-speed-note { display: none; }
+  #speed { width: 100px; }
+  /* 짧은 화면에선 한 줄 타임바와 달 패널이 공존할 자리가 없다 */
+  #moon-panel { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

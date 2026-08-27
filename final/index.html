@@ -120,11 +120,22 @@
   </aside>
 
   <footer id="time-bar">
-    <button id="btn-pause" title="일시정지/재생">⏸</button>
-    <div class="tb-divider"></div>
-    <div class="tb-speed">
-      <div class="tb-speed-label"><span class="tb-speed-note">시간 속도</span><span id="speed-label">10×</span></div>
-      <input type="range" id="speed" min="0" max="4" step="0.01" value="2" />
+    <div class="tb-group tb-play">
+      <button id="btn-pause" title="일시정지/재생">⏸</button>
+      <div class="tb-divider"></div>
+      <div class="tb-speed">
+        <div class="tb-speed-label"><span class="tb-speed-note">시간 속도</span><span id="speed-label">10×</span></div>
+        <input type="range" id="speed" min="0" max="4" step="0.01" value="2" />
+      </div>
+    </div>
+    <div class="tb-divider tb-divider-mid"></div>
+    <div class="tb-group tb-date">
+      <button id="btn-prev-day" class="tb-daybtn" title="하루 전">◀ 하루 전</button>
+      <div class="tb-date-display">
+        <div id="date-main">—</div>
+        <button id="btn-today" title="오늘 날짜로 돌아가기">오늘</button>
+      </div>
+      <button id="btn-next-day" class="tb-daybtn" title="하루 후">하루 후 ▶</button>
     </div>
   </footer>
 

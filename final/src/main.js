@@ -510,10 +510,71 @@ function fmtSpeed() {
 }
 speedInput.addEventListener('input', fmtSpeed);
 fmtSpeed();
-btnPause.addEventListener('click', () => {
-  paused = !paused;
+function setPaused(v) {
+  paused = v;
   btnPause.textContent = paused ? '▶' : '⏸';
+}
+btnPause.addEventListener('click', () => setPaused(!paused));
+
+// ---------------------------------------------------------------- 날짜 넘기기 (하루 전 / 오늘 / 하루 후)
+const DAY_MS = 86400000;
+const btnPrevDay = document.getElementById('btn-prev-day');
+const btnNextDay = document.getElementById('btn-next-day');
+const btnToday = document.getElementById('btn-today');
+const dateMain = document.getElementById('date-main');
+let lastDateKey = -1, lastRealKey = -1;
+const dayKey = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+// 날짜가 실제로 바뀔 때만 DOM을 만진다 — 1000×에서도 프레임마다 텍스트를 안 갈아끼움
+function updateDateReadout() {
+  const d = new Date(SIM_EPOCH_MS + simDays * DAY_MS);
+  const key = dayKey(d);
+  const realKey = dayKey(new Date());
+  if (key === lastDateKey && realKey === lastRealKey) return;
+  lastDateKey = key; lastRealKey = realKey;
+  dateMain.textContent = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+  btnToday.disabled = key === realKey; // 이미 오늘이면 누를 필요가 없어요
+}
+updateDateReadout();
+
+// 날짜 버튼은 누르는 순간 일시정지 — 시계가 계속 돌면 방금 맞춘 날짜가 흘러가 버린다.
+// ▶ 버튼으로 언제든 다시 재생.
+function pauseForDateStep() { if (!paused) setPaused(true); }
+function afterSimJump() { updateDateReadout(); updateMoonPanel(); }
+function stepDay(dir) { pauseForDateStep(); simDays += dir; afterSimJump(); }
+btnToday.addEventListener('click', () => {
+  pauseForDateStep();
+  simDays = (Date.now() - SIM_EPOCH_MS) / DAY_MS; // 실제 지금으로 복귀
+  afterSimJump();
 });
+
+// 꾹 누르면 반복 + 점점 빨라짐 — 다음 달을 보고 싶은 아이가 서른 번 안 눌러도 되게
+function bindHold(btn, dir) {
+  let timer = null;
+  const stop = () => { if (timer !== null) { clearTimeout(timer); timer = null; } };
+  btn.addEventListener('pointerdown', (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    stop();
+    let count = 0;
+    stepDay(dir);
+    const fire = () => {
+      stepDay(dir);
+      count++;
+      timer = setTimeout(fire, count < 6 ? 240 : count < 18 ? 110 : 40);
+    };
+    timer = setTimeout(fire, 450);
+  });
+  btn.addEventListener('pointerup', stop);
+  btn.addEventListener('pointercancel', stop);
+  btn.addEventListener('pointerleave', stop);
+  btn.addEventListener('contextmenu', (e) => e.preventDefault()); // 길게 눌러도 메뉴 안 뜨게
+  // pointerdown으로만 동작하므로 키보드는 따로 (Enter/Space, 꾹 누르면 OS 키 반복)
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stepDay(dir); }
+  });
+}
+bindHold(btnPrevDay, -1);
+bindHold(btnNextDay, 1);
 
 // ---------------------------------------------------------------- 선택 / 카메라
 const raycaster = new THREE.Raycaster();
@@ -908,6 +969,7 @@ function animate() {
     simDays += dt * speedMult(); // 1초 = speedMult 일
     updateMoonPanel();
   }
+  updateDateReadout(); // 내부에서 날짜가 바뀐 프레임에만 DOM을 갱신
 
   // 궤도 위치 + 자전 (+ 근접도/위성 페이드 계산)
   let minRel = 1e9, earthRel = 1e9, sunRel = 1e9;
