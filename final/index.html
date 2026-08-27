@@ -23,8 +23,11 @@
   <header id="hud-top">
     <h1>우리 태양계 탐험</h1>
     <p id="hud-hint">행성을 클릭해 보세요 · 마우스 휠로 확대/축소</p>
-    <p class="scale-note">※ 크기와 거리는 실제 비율이 아니에요</p>
   </header>
+
+  <div class="hud-topcenter">
+    <span class="scale-badge">※ 크기와 거리는 실제 비율이 아니에요</span>
+  </div>
 
   <button id="btn-overview" hidden>← 전체 보기 (ESC)</button>
   <button id="btn-info" hidden>ⓘ 정보 보기</button>
@@ -33,10 +36,13 @@
     <div class="panel-grabber" id="panel-grabber"></div>
     <button id="panel-close" aria-label="정보 닫기">×</button>
     <div class="panel-body">
-      <div class="panel-emoji" id="p-emoji"></div>
-      <h2 id="p-name"></h2>
-      <div class="p-eng" id="p-eng"></div>
-      <div class="p-type" id="p-type"></div>
+      <div class="ip-header">
+        <div class="panel-emoji" id="p-emoji"></div>
+        <div class="ip-title">
+          <div class="ip-namerow"><h2 id="p-name"></h2><span class="p-eng" id="p-eng"></span></div>
+          <div class="p-type" id="p-type"></div>
+        </div>
+      </div>
       <p class="p-desc" id="p-desc"></p>
       <button id="btn-impact">☄️ 소행성 충돌시키기</button>
       <div class="stats" id="p-stats"></div>
@@ -115,8 +121,11 @@
 
   <footer id="time-bar">
     <button id="btn-pause" title="일시정지/재생">⏸</button>
-    <input type="range" id="speed" min="0" max="4" step="0.01" value="2" />
-    <span id="speed-label">10×</span>
+    <div class="tb-divider"></div>
+    <div class="tb-speed">
+      <div class="tb-speed-label"><span class="tb-speed-note">시간 속도</span><span id="speed-label">10×</span></div>
+      <input type="range" id="speed" min="0" max="4" step="0.01" value="2" />
+    </div>
   </footer>
 
   <script type="module" src="/src/main.js"></script>

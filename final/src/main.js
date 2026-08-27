@@ -8,6 +8,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 // (스크린-스페이스 렌즈플레어 패스는 사용자 요청으로 제거)
 import { BODIES } from './data.js';
+import { moonTexture } from './moon-textures.js';
 import { initImpact } from './impact.js';
 
 // ---------------------------------------------------------------- 디바이스 프로파일
@@ -20,6 +21,7 @@ const isSheetLayout = () => mqSheet.matches;
 const LOW_POWER = mqTouch.matches || (navigator.hardwareConcurrency || 8) <= 4 ||
   Math.min(screen.width, screen.height) <= 820;
 const SEG = LOW_POWER ? 32 : 64;         // 행성 구 세그먼트
+const SEG_MOON = LOW_POWER ? 20 : 32;    // 위성은 작게 보이므로 세그먼트 절약
 const SUN_SEG = LOW_POWER ? 48 : 96;
 const STAR_COUNT = LOW_POWER ? 1200 : 3000;
 const BELT_COUNT = LOW_POWER ? 1600 : 4500;
@@ -126,10 +128,12 @@ scene.backgroundIntensity = 0.35;
   })));
 }
 
-// 조명 — 태양 포인트라이트 + 아주 약한 앰비언트
+// 조명 — 태양 포인트라이트 + 차가운 은은한 앰비언트
+// (밤면이 새까만 실루엣이 되지 않도록 앰비언트를 약간 올리고,
+//  각 행성 재질에 자기 컬러맵을 아주 약한 emissive로 깔아 어두운 면에서도 색이 읽히게 한다)
 const sunLight = new THREE.PointLight(0xfff2dd, 26000, 0, 2);
 scene.add(sunLight);
-scene.add(new THREE.AmbientLight(0x223344, 0.35));
+scene.add(new THREE.AmbientLight(0x2b3a50, 0.65));
 
 
 // ---------------------------------------------------------------- 흐르는 빛 셰이더 (궤도/자전 링 공용)
@@ -193,6 +197,10 @@ for (const d of BODIES) {
   tiltGroup.rotation.z = THREE.MathUtils.degToRad(d.tilt);
   group.add(tiltGroup);
 
+  const isMoon = !!d.parent;
+  // 달을 뺀 새 위성들은 "부모 선택 or 카메라 근접" 시에만 라벨/궤도를 보인다 (과밀 방지)
+  const gatedMoon = isMoon && d.id !== 'moon';
+
   let mesh;
   if (d.id === 'sun') {
     mesh = new THREE.Mesh(
@@ -214,16 +222,25 @@ for (const d of BODIES) {
     }));
     glow.scale.setScalar(d.radius * 5.2);
     group.add(glow);
+    bodyMapSet(d.id, 'sunGlow', glow);
   } else {
+    // 위성은 파일 대신 프로시저럴 캔버스 텍스처 (다운로드 없음)
+    const map = d.moonTex ? moonTexture(d.moonTex) : loadTex(d.texture);
     const mat = new THREE.MeshStandardMaterial({
-      map: loadTex(d.texture), roughness: 0.95, metalness: 0,
+      map, roughness: 0.95, metalness: 0,
     });
     if (d.night) {
       mat.emissiveMap = loadTex(d.night);
       mat.emissive = new THREE.Color(0xffe9b0);
-      mat.emissiveIntensity = 0.85;
+      mat.emissiveIntensity = 1.0; // 밤면이 밝아진 만큼 도시 불빛도 또렷하게
+    } else {
+      // 밤면 보조광: 자기 컬러맵을 아주 약하게 스스로 빛나게 → 그늘진 면도 "어둡지만 읽히는 표면"
+      // (지구는 야간 도시 불빛 emissive가 이미 있으므로 제외 — 앰비언트가 대신 받쳐 준다)
+      mat.emissiveMap = map;
+      mat.emissive = new THREE.Color(0x9aa0a8); // 거의 무채색 — 화성이 보라색이 되지 않게
+      mat.emissiveIntensity = 0.14;
     }
-    mesh = new THREE.Mesh(new THREE.SphereGeometry(d.radius, SEG, SEG), mat);
+    mesh = new THREE.Mesh(new THREE.SphereGeometry(d.radius, isMoon ? SEG_MOON : SEG, isMoon ? SEG_MOON : SEG), mat);
   }
   tiltGroup.add(mesh);
 
@@ -243,7 +260,10 @@ for (const d of BODIES) {
       new THREE.SphereGeometry(d.radius * 1.12, SEG, SEG),
       new THREE.ShaderMaterial({
         transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.BackSide,
-        uniforms: { uColor: { value: new THREE.Color(0x4d9fff) } },
+        uniforms: {
+          uColor: { value: new THREE.Color(0x4d9fff) },
+          uStrength: { value: 0.9 }, // 가까이 가면 낮춰서 표면이 씻겨 보이지 않게
+        },
         vertexShader: /* glsl */`
           varying vec3 vN, vV;
           void main() {
@@ -254,14 +274,16 @@ for (const d of BODIES) {
           }`,
         fragmentShader: /* glsl */`
           uniform vec3 uColor;
+          uniform float uStrength;
           varying vec3 vN, vV;
           void main() {
             float f = pow(1.0 - abs(dot(vN, vV)), 2.5);
-            gl_FragColor = vec4(uColor, f * 0.9);
+            gl_FragColor = vec4(uColor, f * uStrength);
           }`,
       }),
     );
     tiltGroup.add(atmo);
+    bodyMapSet(d.id, 'atmo', atmo);
   }
 
   // 토성 고리
@@ -285,7 +307,7 @@ for (const d of BODIES) {
 
   // 라벨
   const labelEl = document.createElement('div');
-  labelEl.className = 'body-label';
+  labelEl.className = isMoon ? 'body-label moon-label' : 'body-label';
   labelEl.textContent = d.name;
   labelEl.addEventListener('click', () => selectBody(d.id));
   const label = new CSS2DObject(labelEl);
@@ -295,7 +317,10 @@ for (const d of BODIES) {
   // 궤도 (흐르는 빛)
   let orbitLine = null;
   if (d.dist > 0) {
-    orbitLine = makeFlowCircle(d.dist, d.id === 'moon' ? 0x9fb8d8 : 0x6ee7ff, d.id === 'moon' ? 0.5 : 0.85);
+    const orbitOpacity = isMoon ? 0.5 : 0.85;
+    orbitLine = makeFlowCircle(d.dist, isMoon ? 0x9fb8d8 : 0x6ee7ff, orbitOpacity);
+    orbitLine.userData.baseOpacity = orbitOpacity;
+    if (d.retroOrbit) orbitLine.material.uniforms.uDir.value = -1; // 트리톤: 빛도 거꾸로 흐른다
     flowMats.push(orbitLine.material);
     if (d.parent) bodyMap.get(d.parent).group.add(orbitLine);
     else scene.add(orbitLine);
@@ -310,6 +335,7 @@ for (const d of BODIES) {
   const entry = bodyMap.get(d.id) || {};
   Object.assign(entry, {
     data: d, group, tiltGroup, mesh, label, labelEl, orbitLine,
+    gatedMoon, moonVis: gatedMoon ? 0 : 1, // 과밀 방지 페이드 (0=숨김, 1=표시)
     angle: Math.random() * Math.PI * 2,
   });
   bodyMap.set(d.id, entry);
@@ -356,21 +382,26 @@ const bloom = new UnrealBloomPass(
 );
 composer.addPass(bloom);
 const grainPass = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
+  uniforms: {
+    tDiffuse: { value: null }, uTime: { value: 0 },
+    uGrain: { value: 0.05 },     // 그레인 세기 — 표면 근접 시 낮춤
+    uVignette: { value: 0.42 },  // 가장자리 어둡기 — 중앙은 항상 100% 밝기
+  },
   vertexShader: /* glsl */`
     varying vec2 vUv;
     void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */`
     uniform sampler2D tDiffuse;
-    uniform float uTime;
+    uniform float uTime, uGrain, uVignette;
     varying vec2 vUv;
     float rand(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main() {
       vec4 c = texture2D(tDiffuse, vUv);
-      float grain = (rand(vUv * 900.0 + fract(uTime)) - 0.5) * 0.05;   // 필름 그레인
+      float grain = (rand(vUv * 900.0 + fract(uTime)) - 0.5) * uGrain;  // 필름 그레인
       float d = distance(vUv, vec2(0.5));
-      float vig = smoothstep(0.95, 0.35, d);                            // 비네트
-      c.rgb = c.rgb * (0.75 + 0.25 * vig) + grain;
+      // 비네트: 가장자리만 어둡게, 화면 중앙은 절대 어둡히지 않는다
+      float vig = 1.0 - uVignette * smoothstep(0.35, 0.95, d);
+      c.rgb = c.rgb * vig + grain;
       gl_FragColor = c;
     }`,
 });
@@ -469,6 +500,19 @@ function selectBody(id) {
     spinRing.scale.setScalar(d.radius * 1.5);
     spinRing.material.uniforms.uDir.value = d.retrograde ? -1 : 1;
   }
+  // 작은 위성도 바짝 다가가 볼 수 있게 줌 한계를 천체 크기에 맞춘다
+  controls.minDistance = Math.max(0.45, d.radius * 1.15);
+  // 포보스처럼 빨리 도는 위성은 그대로 두면 배경이 프레임마다 점프해 어지럽다.
+  // 한 바퀴가 최소 2.5초는 걸리도록 시간 속도를 낮춘다 (슬라이더가 움직여서 아이 눈에도 보인다)
+  if (d.parent && d.orbitDays > 0) {
+    const maxMult = d.orbitDays / 2.5; // 1초 = speedMult 일
+    if (speedMult() > maxMult) {
+      speedInput.value = Math.max(0, Math.log10(maxMult) + 1);
+      fmtSpeed();
+    }
+  }
+  // 라벨 선택 표시
+  for (const [, be] of bodyMap) be.labelEl?.classList.toggle('selected', be === e);
 }
 
 // 패널만 닫는다 — selected(카메라 포커스/추적)는 그대로 유지
@@ -487,6 +531,8 @@ function deselect() {
   spinRing.visible = false;
   panelOpen = false;
   panel.classList.remove('open');
+  controls.minDistance = 3;
+  for (const [, be] of bodyMap) be.labelEl?.classList.remove('selected');
   syncChrome();
   flyT = 0;
   flyFrom.copy(camera.position);
@@ -561,7 +607,7 @@ function openPanel() {
   ];
   items.forEach((el, i) => {
     el.classList.remove('anim');
-    el.style.animationDelay = `${0.15 + i * 0.05}s`;
+    el.style.setProperty('--i', i); // CSS가 --i로 스태거 딜레이 계산
     void el.offsetWidth; // reflow로 애니메이션 재시작
     el.classList.add('anim');
   });
@@ -595,9 +641,17 @@ function countUpNumbers(container) {
   });
 }
 
+// ---------------------------------------------------------------- 근접도 (표면 접근 시 이펙트 완화)
+// 카메라가 어떤 천체 표면에 가까울수록 1에 접근. (거리 ÷ 반지름 기반 → 엔셀라두스도 목성도 동일하게 동작)
+let prox = 0;          // 프레임마다 부드럽게 따라가는 값
+let earthClose = 0;    // 지구 전용 (대기 글로우 완화)
+let sunClose = 0;      // 태양 전용 (코로나 완화)
+
 // ---------------------------------------------------------------- 소행성 충돌 시뮬레이션
 const impact = initImpact({
   camera, controls, bodyMap, LOW_POWER,
+  // 표면 근접도 — 충돌 섬광/링이 코앞에서 화면을 하얗게 태우지 않게
+  getProx: () => prox,
   // 충돌 패널을 닫으면 오던 길(정보 패널)로 되돌아간다
   reopenInfo: () => { if (selected) openPanel(); },
 });
@@ -761,24 +815,66 @@ function animate() {
     updateMoonPanel();
   }
 
-  // 궤도 위치 + 자전
+  // 궤도 위치 + 자전 (+ 근접도/위성 페이드 계산)
+  let minRel = 1e9, earthRel = 1e9, sunRel = 1e9;
+  const orbitDim = 1 - 0.7 * prox; // 표면 근접 시 궤도선이 시야를 가로지르지 않게
   for (const [id, e] of bodyMap) {
     if (id.startsWith('_')) continue;
     const d = e.data;
     if (d.dist > 0) {
-      const a = e.angle + (simDays / d.orbitDays) * Math.PI * 2;
+      // 트리톤은 역행 공전 — 궤도를 반대 방향으로 돈다
+      const a = e.angle + (simDays / d.orbitDays) * Math.PI * 2 * (d.retroOrbit ? -1 : 1);
       e.group.position.set(Math.cos(a) * d.dist, 0, -Math.sin(a) * d.dist);
     }
     if (d.rotationHours) {
       e.mesh.rotation.y = (simDays * 24 / d.rotationHours) * Math.PI * 2;
     }
     if (e.clouds) e.clouds.rotation.y = e.mesh.rotation.y * 1.15;
-    // 라벨 거리 페이드
+
     const dist = camera.position.distanceTo(e.group.getWorldPosition(tmpV));
-    const o = THREE.MathUtils.clamp(1.3 - dist / 500, 0.25, 1);
+    const rel = dist / d.radius; // 반지름 대비 거리 → 천체 크기와 무관한 근접도
+    if (rel < minRel) minRel = rel;
+    if (id === 'earth') earthRel = rel;
+    else if (id === 'sun') sunRel = rel;
+
+    // 새 위성: 부모(또는 형제/자신)가 선택됐거나 카메라가 충분히 가까울 때만 라벨/궤도 표시
+    if (e.gatedMoon) {
+      const nearVis = 1 - THREE.MathUtils.smoothstep(dist, d.dist * 3.5, d.dist * 6);
+      const famSel = !!selected &&
+        (selected === e || selected.data.id === d.parent || selected.data.parent === d.parent);
+      const target = Math.max(famSel ? 1 : 0, nearVis);
+      e.moonVis += (target - e.moonVis) * (1 - Math.exp(-5 * dt)); // 팝 없이 페이드
+    }
+
+    // 라벨 거리 페이드 × 위성 페이드
+    const o = THREE.MathUtils.clamp(1.3 - dist / 500, 0.25, 1) * e.moonVis;
     e.labelEl.style.opacity = o.toFixed(2);
+    if (e.gatedMoon) e.labelEl.style.pointerEvents = e.moonVis < 0.25 ? 'none' : 'auto';
+    if (e.orbitLine) {
+      e.orbitLine.material.uniforms.uOpacity.value =
+        e.orbitLine.userData.baseOpacity * e.moonVis * orbitDim;
+    }
   }
   bodyMap.get('_belt').mesh.rotation.y = (simDays / 1800) * Math.PI * 2;
+
+  // ---- 표면 근접도 → 이펙트 완화 (프레임레이트 무관 지수 완충)
+  {
+    const ease = 1 - Math.exp(-3.5 * dt);
+    prox += ((1 - THREE.MathUtils.smoothstep(minRel, 4.5, 13)) - prox) * ease;
+    earthClose += ((1 - THREE.MathUtils.smoothstep(earthRel, 3.5, 9)) - earthClose) * ease;
+    sunClose += ((1 - THREE.MathUtils.smoothstep(sunRel, 2.5, 8)) - sunClose) * ease;
+
+    bloom.strength = 0.9 - 0.65 * prox;      // 표면이 블룸에 씻기지 않게
+    bloom.threshold = 0.82 + 0.13 * prox;
+    grainPass.uniforms.uGrain.value = 0.05 * (1 - 0.7 * prox);
+    grainPass.uniforms.uVignette.value = 0.42 * (1 - 0.75 * prox);
+    spinRing.material.uniforms.uOpacity.value = 1 - 0.85 * prox; // 적도 링이 표면을 안 가리게
+
+    const earthE = bodyMap.get('earth');
+    if (earthE.atmo) earthE.atmo.material.uniforms.uStrength.value = 0.9 * (1 - 0.75 * earthClose);
+    const sunE = bodyMap.get('sun');
+    if (sunE.sunGlow) sunE.sunGlow.material.opacity = 0.95 * (1 - 0.8 * sunClose);
+  }
 
   // 흐르는 빛 시간
   for (const m of flowMats) m.uniforms.uTime.value = t * 0.13;
@@ -801,7 +897,8 @@ function animate() {
     const d = selected.data;
     const bodyPos = selected.group.getWorldPosition(new THREE.Vector3());
     // 하단 시트가 열려 있으면 가시영역이 좁아지므로 조금 물러나서 천체가 잘리지 않게 한다
-    const viewDist = Math.max(d.radius * 4.2, 3.5) * (1 + sheetFraction() * 0.8);
+    // (하한을 반지름 비례로 낮춰 작은 위성도 화면에 꽉 차게 — 포보스도 가까이 보인다)
+    const viewDist = Math.max(d.radius * 4.2, 1.3) * (1 + sheetFraction() * 0.8);
     // 그리고 천체를 화면 위쪽(시트에 안 가리는 영역) 중앙으로 올린다
     const aimPos = focusTarget(aimV, bodyPos, viewDist);
     if (flyT < 1) {
@@ -818,10 +915,12 @@ function animate() {
       camera.position.lerpVectors(flyFrom, dest, k);
       controls.target.lerpVectors(flyFromTarget, aimPos, k);
     } else {
-      // 추적: 행성 이동분 만큼 카메라도 이동
+      // 추적: 행성 이동분 만큼 카메라와 타깃을 함께 이동
+      // (타깃도 같이 옮겨야 이오처럼 빨리 도는 위성에서 조준이 뒤처지지 않는다)
       if (hadSelected) {
         const delta = bodyPos.clone().sub(prevBodyPos);
         camera.position.add(delta);
+        controls.target.add(delta);
       }
       // 시트 개폐로 조준점이 바뀌면 부드럽게 따라간다 (툭 끊기지 않게)
       controls.target.lerp(aimPos, Math.min(1, dt * 6));
@@ -862,4 +961,9 @@ mqSheet.addEventListener('change', syncChrome);
 
 animate();
 
-window.__dbg =() => ({ pos: camera.position.toArray().map(v => +v.toFixed(1)), tgt: controls.target.toArray().map(v => +v.toFixed(1)), flyT, sel: selected?.data.id ?? null });
+window.__dbg =() => ({ pos: camera.position.toArray().map(v => +v.toFixed(1)), tgt: controls.target.toArray().map(v => +v.toFixed(1)), flyT, sel: selected?.data.id ?? null, prox: +prox.toFixed(2) });
+// 검증용: 천체의 부모 기준 위치(공전 방향 확인 등)
+window.__body = (id) => {
+  const e = bodyMap.get(id);
+  return e ? { p: e.group.position.toArray().map(v => +v.toFixed(3)), moonVis: +(e.moonVis ?? 1).toFixed(2) } : null;
+};

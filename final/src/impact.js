@@ -443,7 +443,7 @@ export function initImpact(ctx) {
         rock.position.toArray(trailPos, 0);
         trailGeo.attributes.position.needsUpdate = true;
         if (p >= 1) {
-          boom(hitP, n, tang);
+          boom(hitP, n);
           return false;
         }
         return true;
@@ -457,20 +457,22 @@ export function initImpact(ctx) {
   }
 
   // ---------------- 충돌 순간
-  function boom(hitP, n, tang) {
+  function boom(hitP, n) {
     const res = pending;
     const d = entry.data;
     const rVis = d.radius;
     const group = entry.group;
     const eLog = Math.log10(res.energy);
     const power = THREE.MathUtils.clamp((eLog - 13) / 18, 0.1, 1.1); // 0~1 연출 강도
+    // 카메라가 표면에 바짝 붙어 있으면 섬광/링을 눌러서 보고 있던 표면이 하얗게 타지 않게
+    const nearDim = 1 - 0.6 * (ctx.getProx ? ctx.getProx() : 0);
 
     if (flight) { flight.dispose(); flight = null; }
 
     // 섬광
     const flash = new THREE.Sprite(new THREE.SpriteMaterial({
       map: softDot, color: 0xfff1d6, blending: THREE.AdditiveBlending,
-      depthWrite: false, depthTest: false, opacity: 1,
+      depthWrite: false, depthTest: false, opacity: nearDim,
     }));
     flash.position.copy(hitP).addScaledVector(n, rVis * 0.03);
     group.add(flash);
@@ -482,7 +484,7 @@ export function initImpact(ctx) {
         ft += dt;
         const p = Math.min(1, ft / flashDur);
         flash.scale.setScalar(0.15 + flashMax * Math.pow(p, 0.35));
-        flash.material.opacity = 1 - p;
+        flash.material.opacity = (1 - p) * nearDim;
         return p < 1;
       },
       dispose() { group.remove(flash); flash.material.dispose(); },
@@ -491,7 +493,7 @@ export function initImpact(ctx) {
     // 충격파 링 — 표면을 따라 퍼지는 고리
     const ringGeo = new THREE.RingGeometry(0.72, 1, LOW_POWER ? 40 : 64);
     const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
-      color: 0xffa94d, transparent: true, opacity: 0.9,
+      color: 0xffa94d, transparent: true, opacity: 0.9 * nearDim,
       side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending,
     }));
     ring.position.copy(hitP).addScaledVector(n, rVis * 0.02);
@@ -505,7 +507,7 @@ export function initImpact(ctx) {
         rt += dt;
         const p = Math.min(1, rt / ringDur);
         ring.scale.setScalar(0.05 + ringMax * (1 - Math.pow(1 - p, 3)));
-        ring.material.opacity = 0.9 * (1 - p);
+        ring.material.opacity = 0.9 * (1 - p) * nearDim;
         return p < 1;
       },
       dispose() { group.remove(ring); ringGeo.dispose(); ring.material.dispose(); },
@@ -567,7 +569,7 @@ export function initImpact(ctx) {
     }
 
     // 천체에 남는 흔적
-    applyMark(res, hitP, n);
+    applyMark(res, hitP);
 
     phase = 'boom';
     resultTimer = REDUCED ? 0.9 : 1.5;
@@ -587,8 +589,10 @@ export function initImpact(ctx) {
     const tex = capTexture(stops);
     // SphereGeometry의 v는 극점(중심)에서 1 → 텍스처 y=0 이 중심이 되도록 뒤집기
     tex.flipY = true;
+    // additive(용융 글로우)는 표면을 코앞에서 볼 때 과하게 번지지 않게 근접도만큼 감쇠
+    const capOpacity = additive ? 1 - 0.5 * (ctx.getProx ? ctx.getProx() : 0) : 1;
     const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-      map: tex, transparent: true, depthWrite: false,
+      map: tex, transparent: true, depthWrite: false, opacity: capOpacity,
       blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
       polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
     }));
@@ -599,7 +603,7 @@ export function initImpact(ctx) {
     return { holder, geo, tex, mat: mesh.material };
   }
 
-  function applyMark(res, hitP, n) {
+  function applyMark(res, hitP) {
     const d = entry.data;
     const mk = getMark(d.id);
     if (d.phys.kind === 'star') return; // 태양: 흔적 없음 (그게 과학적 사실)
@@ -776,7 +780,7 @@ export function initImpact(ctx) {
     const items = [badge, gradeDescEl, ...statsEl.children, changesEl];
     items.forEach((el, i) => {
       el.classList.remove('anim');
-      el.style.animationDelay = `${0.12 + i * 0.05}s`;
+      el.style.setProperty('--i', i); // CSS가 --i로 스태거 딜레이 계산
       void el.offsetWidth;
       el.classList.add('anim');
     });
