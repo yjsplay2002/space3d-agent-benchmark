@@ -6,7 +6,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-// (스크린-스페이스 렌즈플레어 패스는 사용자 요청으로 제거)
+import { LensFlarePass } from './lensflare.js';
 import { BODIES } from './data.js';
 import { moonTexture } from './moon-textures.js';
 import { initImpact } from './impact.js';
@@ -26,6 +26,7 @@ const SUN_SEG = LOW_POWER ? 48 : 96;
 const STAR_COUNT = LOW_POWER ? 1200 : 3000;
 const BELT_COUNT = LOW_POWER ? 1600 : 4500;
 const MAX_DPR = LOW_POWER ? 1.5 : 2;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------------------------------------------------------------- loading
 const manager = new THREE.LoadingManager();
@@ -145,7 +146,8 @@ function flowMaterial(color, opacity = 1) {
       uColor: { value: new THREE.Color(color) },
       uOpacity: { value: opacity },
       uDir: { value: 1 },       // 1 = 진행 방향, -1 = 역방향
-      uPulses: { value: 3 },    // 동시에 흐르는 빛 꼬리 개수
+      uPulses: { value: 3 },    // 동시에 흐르는 빛 펄스 개수
+      uHead: { value: 0 },      // 천체 현재 위치 (궤도 호 분율 0~1) — 매 프레임 갱신
     },
     vertexShader: /* glsl */`
       attribute float aT;
@@ -155,14 +157,18 @@ function flowMaterial(color, opacity = 1) {
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }`,
     fragmentShader: /* glsl */`
-      uniform float uTime, uOpacity, uDir, uPulses;
+      uniform float uTime, uOpacity, uDir, uPulses, uHead;
       uniform vec3 uColor;
       varying float vT;
       void main() {
+        // 천체 바로 뒤로 길게 스러지는 혜성 꼬리 — 공전 방향이 한눈에 읽힌다 (fable5 이식)
+        float behind = fract((uHead - vT) * uDir);
+        float head = exp(-behind * 7.0) * 1.35;
+        // 그 위로 흐르는 작은 펄스들 (방향 보조)
         float phase = fract(vT * uPulses - uTime * uDir);
-        float tail = pow(phase, 14.0);            // 혜성 꼬리 모양
-        float base = 0.06;                        // 희미한 전체 궤도선
-        float b = base + tail * 1.6;
+        float pulse = pow(phase, 14.0) * 0.55;
+        float base = 0.05;                        // 희미한 전체 궤도선
+        float b = base + head + pulse;
         gl_FragColor = vec4(uColor * b, b * uOpacity);
       }`,
   });
@@ -207,7 +213,11 @@ for (const d of BODIES) {
       new THREE.SphereGeometry(d.radius, SUN_SEG, SUN_SEG),
       new THREE.MeshBasicMaterial({ map: loadTex(d.texture), color: 0xffffff }),
     );
-    // 코로나 글로우 스프라이트
+    // HDR 오버드라이브는 매 프레임 sunClose에 따라 조절 (렌즈플레어 브라이트패스의 유일한 트리거)
+    bodyMapSet(d.id, 'sunMat', mesh.material);
+
+    // 원거리 확산광 스프라이트 — 전보다 훨씬 약하게. 근거리 "납작한 원판" 문제는
+    // 아래 프레넬 셸이 넘겨받고, 이 스프라이트는 가까워지면 완전히 사라진다.
     const glowCanvas = document.createElement('canvas');
     glowCanvas.width = glowCanvas.height = 256;
     const g = glowCanvas.getContext('2d');
@@ -218,11 +228,53 @@ for (const d of BODIES) {
     g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
     const glowTex = new THREE.CanvasTexture(glowCanvas);
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.95,
+      map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.34,
     }));
-    glow.scale.setScalar(d.radius * 5.2);
+    glow.scale.setScalar(d.radius * 3.8);
     group.add(glow);
     bodyMapSet(d.id, 'sunGlow', glow);
+
+    // 코로나 — 뒷면 프레넬 셸 + 이중 주파수 플리커 (fable5 이식).
+    // 데칼이 아니라 실제 대기처럼 읽히고, 가까이 가도 납작한 원판이 되지 않는다.
+    const coronaMat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.BackSide,
+      uniforms: {
+        uColor: { value: new THREE.Color(0xffa030) },
+        uCamPos: { value: new THREE.Vector3() },
+        uTime: { value: 0 },
+        uOpacity: { value: 1 },
+        uFlicker: { value: REDUCED ? 0.015 : 0.1 }, // 모션 최소화 설정이면 거의 정지
+      },
+      vertexShader: /* glsl */`
+        varying vec3 vN, vW;
+        void main() {
+          vN = normalize(mat3(modelMatrix) * normal);
+          vW = (modelMatrix * vec4(position, 1.0)).xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: /* glsl */`
+        uniform vec3 uColor;
+        uniform vec3 uCamPos;
+        uniform float uTime, uOpacity, uFlicker;
+        varying vec3 vN, vW;
+        void main() {
+          vec3 v = normalize(uCamPos - vW);
+          float a = abs(dot(v, normalize(vN)));
+          // 프레넬 지수를 fable5(2.0)보다 높여 림을 실루엣 쪽으로 좁히고,
+          // 실루엣 바로 앞(a→0)에서 다시 0으로 눌러 셸 바깥 경계가
+          // "접시 가장자리"처럼 딱 끊겨 보이지 않게 한다
+          float fres = pow(1.0 - a, 3.0) * smoothstep(0.0, 0.22, a);
+          float flicker = (1.0 - uFlicker)
+            + uFlicker * sin(uTime * 2.0 + vW.x * 3.0) * sin(uTime * 1.3 + vW.z * 2.0);
+          gl_FragColor = vec4(uColor * fres * flicker * 1.7 * uOpacity, 1.0);
+        }`,
+    });
+    const corona = new THREE.Mesh(
+      new THREE.SphereGeometry(d.radius * 1.3, LOW_POWER ? 40 : 64, LOW_POWER ? 28 : 48),
+      coronaMat,
+    );
+    group.add(corona);
+    bodyMapSet(d.id, 'corona', corona);
   } else {
     // 위성은 파일 대신 프로시저럴 캔버스 텍스처 (다운로드 없음)
     const map = d.moonTex ? moonTexture(d.moonTex) : loadTex(d.texture);
@@ -346,9 +398,37 @@ function bodyMapSet(id, key, val) {
   bodyMap.set(id, e);
 }
 
-// 자전 방향 링 (선택된 행성 전용, 하나 재사용)
-const spinRing = makeFlowCircle(1, 0xffc46b, 1);
-spinRing.material.uniforms.uPulses.value = 2;
+// 자전 방향 링 (선택된 행성 전용, 하나 재사용) — 토러스라 옆에서 봐도 사라지지 않는다 (fable5 이식)
+// 단위 반지름 토러스를 selectBody에서 천체 크기로 스케일. 튜브 굵기는 반지름 비례라
+// 카메라 프레이밍(viewDist = 반지름 비례)과 함께 어느 천체에서나 같은 굵기로 보인다.
+function makeSpinTorus() {
+  const geo = new THREE.TorusGeometry(1, 0.022, LOW_POWER ? 6 : 8, LOW_POWER ? 96 : 128);
+  geo.rotateX(-Math.PI / 2); // 적도면(XZ)으로, uv.x 증가 방향 = 위에서 봤을 때 CCW(순행)
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: {
+      uTime: { value: 0 },
+      uDir: { value: 1 },
+      uColor: { value: new THREE.Color(0xffc46b) },
+      uOpacity: { value: 1 },
+    },
+    vertexShader: /* glsl */`
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: /* glsl */`
+      uniform float uTime, uDir, uOpacity;
+      uniform vec3 uColor;
+      varying vec2 vUv;
+      void main() {
+        // 튜브 길이 방향으로 흐르는 혜성 펄스 3개
+        float t = fract(vUv.x * 3.0 - uTime * 4.0 * uDir);
+        float b = exp(-t * 6.0) * 1.6 + 0.07;
+        gl_FragColor = vec4(uColor * b * uOpacity, 1.0);
+      }`,
+  });
+  return new THREE.Mesh(geo, mat);
+}
+const spinRing = makeSpinTorus();
 spinRing.visible = false;
 flowMats.push(spinRing.material);
 scene.add(spinRing);
@@ -376,6 +456,13 @@ scene.add(spinRing);
 // ---------------------------------------------------------------- 후처리
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
+// 렌즈플레어 — 블룸 이전의 원본 HDR 버퍼에서 태양 코어만 추출해야 한다.
+// LOW_POWER에선 패스 자체를 만들지 않는다 (체인은 Render → Bloom → Grain → Output 그대로 동작).
+const flarePass = LOW_POWER ? null : new LensFlarePass();
+if (flarePass) {
+  flarePass.setSize(innerWidth, innerHeight);
+  composer.addPass(flarePass);
+}
 const bloomScale = LOW_POWER ? 0.5 : 1; // 모바일은 블룸을 절반 해상도로
 const bloom = new UnrealBloomPass(
   new THREE.Vector2(innerWidth * bloomScale, innerHeight * bloomScale), 0.9, 0.6, 0.82,
@@ -773,6 +860,7 @@ function resize() {
   renderer.setPixelRatio(Math.min(devicePixelRatio, MAX_DPR));
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
+  if (flarePass) flarePass.setSize(innerWidth, innerHeight);
   labelRenderer.setSize(innerWidth, innerHeight);
 }
 addEventListener('resize', resize);
@@ -805,6 +893,12 @@ const clock = new THREE.Clock();
 const prevBodyPos = new THREE.Vector3();
 let hadSelected = false;
 
+// 렌즈플레어 CPU 측 상태 — 태양 스크린 위치/가시도 (가림 판정용 스크래치 포함)
+let flareVis = 0, flareX = 0.5, flareY = 0.5;
+const sunNDC = new THREE.Vector3();
+const toSunV = new THREE.Vector3();
+const occRay = new THREE.Vector3();
+
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
@@ -817,6 +911,10 @@ function animate() {
 
   // 궤도 위치 + 자전 (+ 근접도/위성 페이드 계산)
   let minRel = 1e9, earthRel = 1e9, sunRel = 1e9;
+  // 플레어 가림 판정: 카메라→태양 시선과 각 천체의 구-직선 거리 (레이캐스트 없음, 천체당 곱셈 몇 번)
+  let sunOcc = 1;
+  const camSunDist = camera.position.length();
+  toSunV.copy(camera.position).multiplyScalar(-1 / Math.max(camSunDist, 1e-6));
   const orbitDim = 1 - 0.7 * prox; // 표면 근접 시 궤도선이 시야를 가로지르지 않게
   for (const [id, e] of bodyMap) {
     if (id.startsWith('_')) continue;
@@ -825,6 +923,10 @@ function animate() {
       // 트리톤은 역행 공전 — 궤도를 반대 방향으로 돈다
       const a = e.angle + (simDays / d.orbitDays) * Math.PI * 2 * (d.retroOrbit ? -1 : 1);
       e.group.position.set(Math.cos(a) * d.dist, 0, -Math.sin(a) * d.dist);
+      // 궤도선 혜성 꼬리의 머리 = 천체의 현재 위치 (원 궤도 → 호 분율 = 각도 분율)
+      if (e.orbitLine) {
+        e.orbitLine.material.uniforms.uHead.value = ((a / (Math.PI * 2)) % 1 + 1) % 1;
+      }
     }
     if (d.rotationHours) {
       e.mesh.rotation.y = (simDays * 24 / d.rotationHours) * Math.PI * 2;
@@ -836,6 +938,15 @@ function animate() {
     if (rel < minRel) minRel = rel;
     if (id === 'earth') earthRel = rel;
     else if (id === 'sun') sunRel = rel;
+    if (id !== 'sun') {
+      // 이 천체가 태양을 가리는가 — 시선(카메라→태양)과의 수직 거리로 판정
+      occRay.copy(tmpV).sub(camera.position);
+      const along = occRay.dot(toSunV);
+      if (along > 0 && along < camSunDist) {
+        const off = occRay.addScaledVector(toSunV, -along).length();
+        sunOcc = Math.min(sunOcc, THREE.MathUtils.smoothstep(off, d.radius * 0.9, d.radius * 1.6));
+      }
+    }
 
     // 새 위성: 부모(또는 형제/자신)가 선택됐거나 카메라가 충분히 가까울 때만 라벨/궤도 표시
     if (e.gatedMoon) {
@@ -873,13 +984,24 @@ function animate() {
     const earthE = bodyMap.get('earth');
     if (earthE.atmo) earthE.atmo.material.uniforms.uStrength.value = 0.9 * (1 - 0.75 * earthClose);
     const sunE = bodyMap.get('sun');
-    if (sunE.sunGlow) sunE.sunGlow.material.opacity = 0.95 * (1 - 0.8 * sunClose);
+    // 확산광 스프라이트는 근접 시 완전히 소멸 — "납작한 원판"은 가까울 때만 문제였다
+    if (sunE.sunGlow) sunE.sunGlow.material.opacity = 0.34 * (1 - sunClose);
+    if (sunE.corona) {
+      const cu = sunE.corona.material.uniforms;
+      cu.uCamPos.value.copy(camera.position);
+      if (!REDUCED) cu.uTime.value = t;
+      cu.uOpacity.value = 1 - 0.55 * sunClose; // 셸은 가까이서도 남되 표면을 태우지 않게
+    }
+    // 태양 HDR 오버드라이브 — 플레어 브라이트패스(임계 1.15)의 유일한 트리거.
+    // 가까이 가면 1로 되돌려 표면 텍스처 대비를 살린다. (LOW_POWER는 플레어가 없으니 약하게)
+    if (sunE.sunMat) {
+      const k = (1 - sunClose) * (LOW_POWER ? 0.6 : 1);
+      sunE.sunMat.color.setRGB(1 + 0.8 * k, 1 + 0.55 * k, 1 + 0.25 * k);
+    }
   }
 
   // 흐르는 빛 시간
   for (const m of flowMats) m.uniforms.uTime.value = t * 0.13;
-
-  // 렌즈플레어 광원 위치 (태양 = 원점)
 
   // 호버 하이라이트 — 터치 기기는 호버 개념이 없으므로 매 프레임 레이캐스트 생략
   if (!isTouch()) {
@@ -947,6 +1069,31 @@ function animate() {
 
   controls.update();
   impact.update(dt); // 소행성 비행/폭발/카메라 흔들림 (controls 이후에 적용)
+
+  // 렌즈플레어 — 태양(원점) 스크린 위치/가시도. 카메라가 이번 프레임 최종 위치로
+  // 이동한 "다음"에 계산해야 충돌 흔들림 중에도 마스크가 태양에 정확히 붙는다.
+  if (flarePass) {
+    camera.updateMatrixWorld();
+    sunNDC.set(0, 0, 0).applyMatrix4(camera.matrixWorldInverse); // 카메라 공간 z로 뒤/앞 판정
+    const behind = sunNDC.z > -0.1;
+    let vis = 0;
+    if (!behind) {
+      sunNDC.set(0, 0, 0).project(camera);
+      flareX = (sunNDC.x + 1) / 2; // 뒤에 있을 땐 마지막 위치 유지 (페이드아웃 잔광이 튀지 않게)
+      flareY = (sunNDC.y + 1) / 2;
+      // 화면 가장자리를 벗어나면 빠르게 소멸
+      const edge =
+        (1 - THREE.MathUtils.smoothstep(Math.abs(sunNDC.x), 0.85, 1.05)) *
+        (1 - THREE.MathUtils.smoothstep(Math.abs(sunNDC.y), 0.85, 1.05));
+      // 가림 판정(sunOcc)은 천체 루프에서 계산 — 브라이트패스가 이미지 기반이라
+      // 완전 가림은 어차피 소스 픽셀이 사라지지만, CPU 페이드가 전환을 앞당겨 준다.
+      // 표면 근접 시(prox↑) 플레어는 완전히 비켜선다.
+      vis = edge * sunOcc * (1 - prox);
+    }
+    flareVis += (vis - flareVis) * (1 - Math.exp(-7 * dt));
+    flarePass.setSun(flareX, flareY, flareVis);
+  }
+
   grainPass.uniforms.uTime.value = t;
   composer.render();
   labelRenderer.render(scene, camera);
@@ -961,7 +1108,21 @@ mqSheet.addEventListener('change', syncChrome);
 
 animate();
 
-window.__dbg =() => ({ pos: camera.position.toArray().map(v => +v.toFixed(1)), tgt: controls.target.toArray().map(v => +v.toFixed(1)), flyT, sel: selected?.data.id ?? null, prox: +prox.toFixed(2) });
+window.__dbg =() => ({ pos: camera.position.toArray().map(v => +v.toFixed(1)), tgt: controls.target.toArray().map(v => +v.toFixed(1)), flyT, sel: selected?.data.id ?? null, prox: +prox.toFixed(2), flare: +flareVis.toFixed(3), lowPower: LOW_POWER });
+// 검증용: 선택/카메라/이펙트 토글
+window.__select = (id) => selectBody(id);
+window.__deselect = () => deselect();
+window.__setCam = (px, py, pz, tx, ty, tz) => {
+  camera.position.set(px, py, pz);
+  controls.target.set(tx, ty, tz);
+  controls.update();
+};
+window.__fx = (on) => { // 추가 이펙트 on/off — 프레임 비용 측정용
+  if (flarePass) flarePass.enabled = on;
+  const s = bodyMap.get('sun');
+  if (s.corona) s.corona.visible = on;
+};
+window.__flareI = (v) => { if (flarePass) flarePass.compMat.uniforms.uIntensity.value = v; };
 // 검증용: 천체의 부모 기준 위치(공전 방향 확인 등)
 window.__body = (id) => {
   const e = bodyMap.get(id);
