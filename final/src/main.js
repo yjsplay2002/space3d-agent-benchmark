@@ -10,6 +10,7 @@ import { LensFlarePass } from './lensflare.js';
 import { BODIES } from './data.js';
 import { moonTexture } from './moon-textures.js';
 import { initImpact } from './impact.js';
+import { initComets } from './comets.js';
 
 // ---------------------------------------------------------------- 디바이스 프로파일
 // 터치 기기 = 호버 불가. 레이아웃 기준은 CSS의 하단 시트 미디어쿼리와 동일하게 맞춘다.
@@ -17,9 +18,10 @@ const mqTouch = matchMedia('(hover: none)');
 const mqSheet = matchMedia('(max-width: 820px), (orientation: portrait) and (max-width: 1024px)');
 const isTouch = () => mqTouch.matches;
 const isSheetLayout = () => mqSheet.matches;
-// 저사양 판단: 터치 기기 + 코어 수 / 좁은 화면
-const LOW_POWER = mqTouch.matches || (navigator.hardwareConcurrency || 8) <= 4 ||
-  Math.min(screen.width, screen.height) <= 820;
+// 저사양 판단: 터치 기기 + 코어 수 / 좁은 화면 (?hipower — 검증용 강제 고사양)
+const LOW_POWER = !new URLSearchParams(location.search).has('hipower') &&
+  (mqTouch.matches || (navigator.hardwareConcurrency || 8) <= 4 ||
+  Math.min(screen.width, screen.height) <= 820);
 const SEG = LOW_POWER ? 32 : 64;         // 행성 구 세그먼트
 const SEG_MOON = LOW_POWER ? 20 : 32;    // 위성은 작게 보이므로 세그먼트 절약
 const SUN_SEG = LOW_POWER ? 48 : 96;
@@ -453,6 +455,13 @@ scene.add(spinRing);
   bodyMapSet('_belt', 'mesh', belt);
 }
 
+// ---------------------------------------------------------------- 유명 혜성
+// 실제 궤도 요소 + 케플러 방정식 — 날짜 기반의 진짜 타원 궤도 (comets.js)
+const comets = initComets({
+  scene, bodyMap, clickables, flowMats, flowMaterial,
+  renderer, LOW_POWER, REDUCED, selectBody,
+});
+
 // ---------------------------------------------------------------- 후처리
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -537,8 +546,8 @@ function updateDateReadout() {
 updateDateReadout();
 
 // 날짜 버튼은 누르는 순간 일시정지 — 시계가 계속 돌면 방금 맞춘 날짜가 흘러가 버린다.
-// ▶ 버튼으로 언제든 다시 재생.
-function pauseForDateStep() { if (!paused) setPaused(true); }
+// ▶ 버튼으로 언제든 다시 재생. (진행 중인 근일점 시간 여행도 취소)
+function pauseForDateStep() { dateJump = null; if (!paused) setPaused(true); }
 function afterSimJump() { updateDateReadout(); updateMoonPanel(); }
 function stepDay(dir) { pauseForDateStep(); simDays += dir; afterSimJump(); }
 btnToday.addEventListener('click', () => {
@@ -575,6 +584,24 @@ function bindHold(btn, dir) {
 }
 bindHold(btnPrevDay, -1);
 bindHold(btnNextDay, 1);
+
+// ---------------------------------------------------------------- 혜성 근일점 시간 여행
+// 순간이동이 아니라 "빨리 감기" — 시뮬레이션 날짜를 이징으로 감아 행성·달·날짜가
+// 함께 흘러가고, 추적 중인 혜성이 궤도를 따라 태양으로 날아 들어오는 게 보인다.
+const simJD = () => SIM_EPOCH_MS / DAY_MS + 2440587.5 + simDays; // 현재 시뮬레이션 율리우스일
+let dateJump = null; // { from, to, t, dur }
+function startDateJump(to) {
+  if (REDUCED) { simDays = to; landJump(); return; } // 모션 최소화: 즉시 도착
+  const span = Math.abs(to - simDays);
+  dateJump = { from: simDays, to, t: 0, dur: Math.min(3.2, 1.5 + Math.log10(Math.max(10, span)) * 0.4) };
+}
+function landJump() {
+  afterSimJump();
+  // 도착하면 하루하루가 눈에 보이는 10×로 재생 — 근일점 통과를 지켜볼 수 있다
+  speedInput.value = 2;
+  fmtSpeed();
+  setPaused(false);
+}
 
 // ---------------------------------------------------------------- 선택 / 카메라
 const raycaster = new THREE.Raycaster();
@@ -642,7 +669,7 @@ function selectBody(id) {
   openPanel();
   // 자전 링 세팅
   const d = e.data;
-  if (d.id === 'sun') { spinRing.visible = false; }
+  if (d.id === 'sun' || d.comet) { spinRing.visible = false; } // 혜성 핵엔 자전 링이 안 읽힌다
   else {
     spinRing.visible = true;
     spinRing.scale.setScalar(d.radius * 1.5);
@@ -714,6 +741,10 @@ const easeInOut = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) /
 // ---------------------------------------------------------------- 정보 패널
 function fillPanel(d) {
   panel.hidden = false;
+  // 충돌 실험은 phys(실제 물리량)가 있는 천체 전용 — 혜성은 대신 근일점 여행을 보여준다
+  document.getElementById('btn-impact').hidden = !d.phys;
+  cometBox.hidden = !d.comet;
+  if (d.comet) { refreshCometBox(d); cometBoxKey = lastDateKey; }
   document.getElementById('p-emoji').textContent = d.emoji;
   document.getElementById('p-name').textContent = d.name;
   document.getElementById('p-eng').textContent = d.eng;
@@ -750,6 +781,7 @@ function openPanel() {
     document.querySelector('.panel-emoji'), document.getElementById('p-name'),
     document.getElementById('p-eng'), document.getElementById('p-type'),
     document.getElementById('p-desc'), document.getElementById('btn-impact'),
+    document.getElementById('comet-box'),
     ...stats.children, document.getElementById('p-spin'),
     panel.querySelector('h3'), ...facts.children,
   ];
@@ -788,6 +820,30 @@ function countUpNumbers(container) {
     requestAnimationFrame(tick);
   });
 }
+
+// ---------------------------------------------------------------- 혜성 정보 패널 (다음 근일점)
+const cometBox = document.getElementById('comet-box');
+let cometBoxKey = -1; // 날짜가 바뀐 프레임에만 다시 계산
+function refreshCometBox(d) {
+  const jd = simJD();
+  const tp = comets.nextPerihelionJD(d.id, jd);
+  const date = new Date((tp - 2440587.5) * DAY_MS);
+  const days = Math.round(tp - jd);
+  const years = days / 365.25;
+  document.getElementById('comet-next-date').textContent =
+    `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+  document.getElementById('comet-next-sub').textContent =
+    days < 60 ? `${days}일 뒤예요!`
+      : years < 2 ? `약 ${Math.round(days / 30.44)}개월 뒤예요`
+        : `약 ${Math.round(years).toLocaleString('ko-KR')}년 뒤예요`;
+}
+document.getElementById('btn-perihelion').addEventListener('click', () => {
+  if (!selected?.data.comet) return;
+  // 이미 근일점 직전(도착 상태)이면 그다음 회귀로 — 연타하면 한 바퀴씩 미래로 간다
+  const jd = simJD();
+  const tp = comets.nextPerihelionJD(selected.data.id, jd + 26);
+  startDateJump(simDays + (tp - 25 - jd)); // 25일 전에 내려 접근을 지켜본다
+});
 
 // ---------------------------------------------------------------- 근접도 (표면 접근 시 이펙트 완화)
 // 카메라가 어떤 천체 표면에 가까울수록 1에 접근. (거리 ÷ 반지름 기반 → 엔셀라두스도 목성도 동일하게 동작)
@@ -965,11 +1021,29 @@ function animate() {
   const dt = Math.min(clock.getDelta(), 0.1);
   const t = clock.elapsedTime;
 
-  if (!paused) {
+  if (dateJump) {
+    // 근일점 시간 여행 — 이징으로 날짜를 감는다 (일시정지 여부와 무관하게 진행)
+    dateJump.t += dt;
+    const k = easeInOut(Math.min(1, dateJump.t / dateJump.dur));
+    simDays = dateJump.from + (dateJump.to - dateJump.from) * k;
+    updateMoonPanel();
+    if (dateJump.t >= dateJump.dur) {
+      simDays = dateJump.to;
+      dateJump = null;
+      landJump();
+    }
+  } else if (!paused) {
     simDays += dt * speedMult(); // 1초 = speedMult 일
     updateMoonPanel();
   }
   updateDateReadout(); // 내부에서 날짜가 바뀐 프레임에만 DOM을 갱신
+  // 혜성 패널의 "다음 근일점"도 날짜를 따라간다 (날짜가 바뀐 프레임에만)
+  if (selected?.data.comet && lastDateKey !== cometBoxKey) {
+    cometBoxKey = lastDateKey;
+    refreshCometBox(selected.data);
+  }
+  // 혜성 위치·꼬리·궤도선 — 아래 bodyMap 루프(근접도·가림 판정)가 이 위치를 읽는다
+  comets.update(simJD(), t, dt, camera, selected, prox);
 
   // 궤도 위치 + 자전 (+ 근접도/위성 페이드 계산)
   let minRel = 1e9, earthRel = 1e9, sunRel = 1e9;
@@ -1009,6 +1083,9 @@ function animate() {
         sunOcc = Math.min(sunOcc, THREE.MathUtils.smoothstep(off, d.radius * 0.9, d.radius * 1.6));
       }
     }
+
+    // 혜성: 라벨/궤도/꼬리 페이드는 comets.update가 자체 규칙(선택/근접/활동)으로 처리
+    if (e.comet) continue;
 
     // 새 위성: 부모(또는 형제/자신)가 선택됐거나 카메라가 충분히 가까울 때만 라벨/궤도 표시
     if (e.gatedMoon) {
@@ -1082,7 +1159,8 @@ function animate() {
     const bodyPos = selected.group.getWorldPosition(new THREE.Vector3());
     // 하단 시트가 열려 있으면 가시영역이 좁아지므로 조금 물러나서 천체가 잘리지 않게 한다
     // (하한을 반지름 비례로 낮춰 작은 위성도 화면에 꽉 차게 — 포보스도 가까이 보인다)
-    const viewDist = Math.max(d.radius * 4.2, 1.3) * (1 + sheetFraction() * 0.8);
+    // (혜성은 핵이 작아도 코마·꼬리가 보이게 조금 물러선다)
+    const viewDist = Math.max(d.radius * 4.2, d.comet ? 5 : 1.3) * (1 + sheetFraction() * 0.8);
     // 그리고 천체를 화면 위쪽(시트에 안 가리는 영역) 중앙으로 올린다
     const aimPos = focusTarget(aimV, bodyPos, viewDist);
     if (flyT < 1) {
@@ -1185,6 +1263,14 @@ window.__fx = (on) => { // 추가 이펙트 on/off — 프레임 비용 측정�
   if (s.corona) s.corona.visible = on;
 };
 window.__flareI = (v) => { if (flarePass) flarePass.compMat.uniforms.uIntensity.value = v; };
+// 검증용: 혜성 상태(꼬리 방향각·활동도·역행 여부), 시뮬레이션 날짜 강제 설정
+window.__comet = (id) => comets.debug(id, simJD());
+window.__setDays = (v) => { dateJump = null; simDays = v; afterSimJump(); };
+window.__state = () => ({
+  simDays: +simDays.toFixed(2), jd: +simJD().toFixed(2), paused,
+  speed: speedMult(), date: dateMain.textContent, jumping: !!dateJump,
+});
+window.__jump = () => document.getElementById('btn-perihelion').click();
 // 검증용: 천체의 부모 기준 위치(공전 방향 확인 등)
 window.__body = (id) => {
   const e = bodyMap.get(id);

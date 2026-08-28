@@ -322,6 +322,38 @@ body.focused.panel-closed #btn-overview { right: 28px; top: calc(74px + var(--sa
 .moon-rows span { color: var(--text-dim); letter-spacing: 0.1em; }
 .moon-rows b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 
+/* ---------- 혜성: 다음 근일점 박스 (정보 패널 안) ---------- */
+#comet-box {
+  margin-top: 16px; padding: 12px 14px;
+  background: rgba(77, 232, 255, 0.05);
+  border: 1px solid rgba(77, 232, 255, 0.18); border-radius: 8px;
+}
+.comet-hint { font-size: 11px; line-height: 1.5; color: var(--text-dim); letter-spacing: 0.04em; }
+.comet-next {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  margin-top: 9px; font-size: 13px;
+}
+.comet-next span { color: var(--text-dim); letter-spacing: 0.1em; white-space: nowrap; }
+.comet-next b {
+  color: var(--amber); font-weight: 700; font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(255, 194, 102, 0.4);
+}
+.comet-next-sub { margin-top: 3px; text-align: right; font-size: 12px; color: var(--cyan); }
+#btn-perihelion {
+  display: block; width: 100%; margin-top: 12px;
+  padding: 12px 16px; font-size: 13.5px; font-weight: 700;
+  letter-spacing: 0.1em; font-family: inherit;
+  color: var(--cyan); cursor: pointer;
+  background: rgba(77, 232, 255, 0.08);
+  border: 1px solid rgba(77, 232, 255, 0.4); border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+#btn-perihelion:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 18px rgba(77, 232, 255, 0.3);
+}
+#btn-perihelion:active { transform: scale(0.97); }
+
 /* ---------- 3D labels ---------- */
 .body-label {
   font-size: 12px; letter-spacing: 0.22em; color: var(--cyan-dim);
@@ -343,6 +375,8 @@ body.focused.panel-closed #btn-overview { right: 28px; top: calc(74px + var(--sa
 /* 위성 라벨은 한 단계 작게 — 행성과의 위계 구분 */
 .moon-label { font-size: 10.5px; letter-spacing: 0.18em; }
 .moon-label::before { font-size: 8px; }
+/* 혜성 라벨 — 위성급 크기 + 혜성 마커 (기본은 은은하게, 활동/선택 시 밝아짐) */
+.comet-label::before { content: '☄ '; font-size: 9px; opacity: 0.85; }
 
 /* 터치 기기: 라벨 탭 영역 확대 */
 @media (hover: none) {
