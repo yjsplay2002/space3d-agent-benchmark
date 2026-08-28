@@ -97,6 +97,38 @@ body {
   white-space: nowrap;
 }
 
+/* ---------- 유명 혜성 탐색기 ---------- */
+#comet-guide {
+  position: fixed; z-index: 11;
+  top: calc(112px + var(--safe-t)); left: 28px;
+  width: 176px; padding: 11px;
+  background: rgba(7, 16, 30, 0.58);
+  border: 1px solid rgba(117, 215, 255, 0.2); border-radius: 12px;
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 22px rgba(77, 232, 255, 0.035);
+}
+.comet-guide-title {
+  display: block; margin: 1px 3px 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+  color: var(--amber);
+}
+#comet-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#comet-nav button {
+  min-width: 0; padding: 7px 5px;
+  font: 600 10.5px/1 var(--font); letter-spacing: 0.04em;
+  color: var(--text-dim); cursor: pointer;
+  background: rgba(77, 232, 255, 0.045);
+  border: 1px solid rgba(120, 200, 255, 0.14); border-radius: 6px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#comet-nav button:hover, #comet-nav button.active {
+  color: var(--amber); border-color: rgba(255, 194, 102, 0.55);
+  background: rgba(255, 194, 102, 0.09);
+  box-shadow: 0 0 12px rgba(255, 194, 102, 0.18);
+}
+#comet-nav button:active { transform: scale(0.95); }
+
 /* ---------- floating buttons ---------- */
 #btn-overview, #btn-info {
   position: fixed; z-index: 20;
@@ -201,6 +233,9 @@ body.focused.panel-closed #btn-overview { right: 28px; top: calc(74px + var(--sa
   content: '✦'; position: absolute; left: 0; top: 7px;
   color: var(--cyan); font-size: 11px;
 }
+
+.comet-label { color: rgba(255, 194, 102, 0.72); }
+.comet-label::before { content: '☄ '; color: var(--amber); }
 
 /* materialize-in animation — --i 커스텀 프로퍼티로 스태거 */
 #info-panel.open .anim {
@@ -504,6 +539,20 @@ body.focused.panel-closed #btn-overview { right: 28px; top: calc(74px + var(--sa
   border: 1px solid rgba(255, 194, 102, 0.4); border-radius: 8px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
+#btn-perihelion {
+  display: block; width: 100%; margin-top: 16px;
+  padding: 13px 16px; font-size: 14px; font-weight: 700;
+  letter-spacing: 0.08em; font-family: inherit;
+  color: #dff8ff; cursor: pointer;
+  background: linear-gradient(135deg, rgba(77, 232, 255, 0.14), rgba(76, 124, 255, 0.12));
+  border: 1px solid rgba(77, 232, 255, 0.5); border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+#btn-perihelion:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 18px rgba(77, 232, 255, 0.3);
+}
+#btn-perihelion:active { transform: scale(0.97); }
 #btn-impact:hover {
   border-color: var(--amber);
   box-shadow: 0 0 18px rgba(255, 194, 102, 0.3);
@@ -654,6 +703,18 @@ body.impact-open #btn-info { display: none !important; }
 
 /* ---------- 모바일: 하단 시트 (정보 패널과 같은 규칙) ---------- */
 @media (max-width: 820px), (orientation: portrait) and (max-width: 1024px) {
+  #comet-guide {
+    top: calc(102px + var(--safe-t)); left: 12px; right: 12px;
+    width: auto; padding: 7px 8px;
+  }
+  .comet-guide-title { display: none; }
+  #comet-nav {
+    display: flex; gap: 6px; overflow-x: auto;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  #comet-nav::-webkit-scrollbar { display: none; }
+  #comet-nav button { flex: 0 0 auto; min-height: 34px; padding: 8px 11px; font-size: 11px; }
+
   #impact-panel {
     top: auto; left: 0; right: 0; bottom: 0;
     width: 100%; height: auto;

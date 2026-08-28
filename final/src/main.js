@@ -10,6 +10,10 @@ import { LensFlarePass } from './lensflare.js';
 import { BODIES } from './data.js';
 import { moonTexture } from './moon-textures.js';
 import { initImpact } from './impact.js';
+import {
+  COMETS, createComets, updateComets, cometStats,
+  dateToJulian, nextPerihelionAfter,
+} from './comets.js';
 
 // ---------------------------------------------------------------- 디바이스 프로파일
 // 터치 기기 = 호버 불가. 레이아웃 기준은 CSS의 하단 시트 미디어쿼리와 동일하게 맞춘다.
@@ -392,6 +396,22 @@ for (const d of BODIES) {
   });
   bodyMap.set(d.id, entry);
 }
+
+// ---------------------------------------------------------------- 유명 혜성 6종
+// 행성과 달은 원형 교육용 궤도, 혜성은 JPL 궤도 요소를 이용한 초점 타원으로 따로 만든다.
+const cometEntries = createComets({
+  scene,
+  labelClass: 'body-label',
+  dotTexture: softDot,
+  lowPower: LOW_POWER,
+  onSelect: (id) => selectBody(id),
+  makeLabel: (element) => new CSS2DObject(element),
+});
+for (const entry of cometEntries) {
+  bodyMap.set(entry.data.id, entry);
+  clickables.push(entry.mesh);
+}
+
 function bodyMapSet(id, key, val) {
   const e = bodyMap.get(id) || {};
   e[key] = val;
@@ -500,6 +520,8 @@ let paused = false;
 // 시뮬레이션 0일 = 실제 오늘 → 달 위상 패널이 실제 날짜와 맞음
 const SIM_EPOCH_MS = Date.now();
 let simDays = 0;
+const SIM_EPOCH_JD = dateToJulian(new Date(SIM_EPOCH_MS));
+const currentJD = () => SIM_EPOCH_JD + simDays;
 const speedInput = document.getElementById('speed');
 const speedLabel = document.getElementById('speed-label');
 const btnPause = document.getElementById('btn-pause');
@@ -539,7 +561,11 @@ updateDateReadout();
 // 날짜 버튼은 누르는 순간 일시정지 — 시계가 계속 돌면 방금 맞춘 날짜가 흘러가 버린다.
 // ▶ 버튼으로 언제든 다시 재생.
 function pauseForDateStep() { if (!paused) setPaused(true); }
-function afterSimJump() { updateDateReadout(); updateMoonPanel(); }
+function afterSimJump() {
+  updateDateReadout();
+  updateMoonPanel();
+  if (selected?.data.isComet) fillPanel(selected.data);
+}
 function stepDay(dir) { pauseForDateStep(); simDays += dir; afterSimJump(); }
 btnToday.addEventListener('click', () => {
   pauseForDateStep();
@@ -590,7 +616,20 @@ const aimV = new THREE.Vector3();
 const panel = document.getElementById('info-panel');
 const btnOverview = document.getElementById('btn-overview');
 const btnInfo = document.getElementById('btn-info');
+const btnPerihelion = document.getElementById('btn-perihelion');
 let panelOpen = false;   // 패널 표시 여부 — 포커스(selected)와 완전히 독립
+
+// 화면 밖의 긴 궤도에 있는 혜성도 바로 찾을 수 있는 탐색 버튼.
+const cometNav = document.getElementById('comet-nav');
+for (const comet of COMETS) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.comet = comet.id;
+  button.textContent = comet.short;
+  button.setAttribute('aria-label', `${comet.name} 혜성 보기`);
+  button.addEventListener('click', () => selectBody(comet.id));
+  cometNav.appendChild(button);
+}
 
 canvas.addEventListener('pointermove', (e) => {
   if (e.pointerType !== 'mouse') return; // 터치 드래그는 호버/패럴랙스로 취급 안 함
@@ -642,7 +681,7 @@ function selectBody(id) {
   openPanel();
   // 자전 링 세팅
   const d = e.data;
-  if (d.id === 'sun') { spinRing.visible = false; }
+  if (d.id === 'sun' || d.isComet) { spinRing.visible = false; }
   else {
     spinRing.visible = true;
     spinRing.scale.setScalar(d.radius * 1.5);
@@ -660,7 +699,13 @@ function selectBody(id) {
     }
   }
   // 라벨 선택 표시
-  for (const [, be] of bodyMap) be.labelEl?.classList.toggle('selected', be === e);
+  for (const [, be] of bodyMap) {
+    be.labelEl?.classList.toggle('selected', be === e);
+    if (be.cometOrbit) be.cometOrbit.material.opacity = be === e ? 0.42 : 0.1;
+  }
+  cometNav.querySelectorAll('button').forEach((button) => {
+    button.classList.toggle('active', button.dataset.comet === d.id);
+  });
 }
 
 // 패널만 닫는다 — selected(카메라 포커스/추적)는 그대로 유지
@@ -680,7 +725,11 @@ function deselect() {
   panelOpen = false;
   panel.classList.remove('open');
   controls.minDistance = 3;
-  for (const [, be] of bodyMap) be.labelEl?.classList.remove('selected');
+  for (const [, be] of bodyMap) {
+    be.labelEl?.classList.remove('selected');
+    if (be.cometOrbit) be.cometOrbit.material.opacity = 0.1;
+  }
+  cometNav.querySelectorAll('button').forEach((button) => button.classList.remove('active'));
   syncChrome();
   flyT = 0;
   flyFrom.copy(camera.position);
@@ -719,11 +768,20 @@ function fillPanel(d) {
   document.getElementById('p-eng').textContent = d.eng;
   document.getElementById('p-type').textContent = d.type;
   document.getElementById('p-desc').textContent = d.desc;
-  document.getElementById('p-spin').textContent = '🔄 ' + d.spin;
+  document.getElementById('p-spin').textContent = (d.isComet ? '☀️ ' : '🔄 ') + d.spin;
+
+  const btnImpact = document.getElementById('btn-impact');
+  btnImpact.hidden = !!d.isComet;
+  btnPerihelion.hidden = !d.isComet;
+  if (d.isComet) {
+    const next = new Date((nextPerihelionAfter(d, currentJD()) - 2440587.5) * DAY_MS);
+    btnPerihelion.textContent = `⏩ ${next.getUTCFullYear().toLocaleString('ko-KR')}년 근일점으로 이동`;
+  }
 
   const stats = document.getElementById('p-stats');
   stats.innerHTML = '';
-  for (const [k, v] of Object.entries(d.stats)) {
+  const displayStats = d.isComet ? cometStats(d, currentJD()) : d.stats;
+  for (const [k, v] of Object.entries(displayStats)) {
     const row = document.createElement('div');
     row.className = 'stat-row';
     row.innerHTML = `<span class="k">${k}</span><span class="v"></span>`;
@@ -749,7 +807,7 @@ function openPanel() {
   const items = [
     document.querySelector('.panel-emoji'), document.getElementById('p-name'),
     document.getElementById('p-eng'), document.getElementById('p-type'),
-    document.getElementById('p-desc'), document.getElementById('btn-impact'),
+    document.getElementById('p-desc'), document.getElementById('btn-impact'), btnPerihelion,
     ...stats.children, document.getElementById('p-spin'),
     panel.querySelector('h3'), ...facts.children,
   ];
@@ -804,9 +862,16 @@ const impact = initImpact({
   reopenInfo: () => { if (selected) openPanel(); },
 });
 document.getElementById('btn-impact').addEventListener('click', () => {
-  if (!selected) return;
+  if (!selected || selected.data.isComet) return;
   closePanel();          // 정보 패널 자리를 비우고
   impact.open(selected); // 충돌 실험 시트를 연다
+});
+
+btnPerihelion.addEventListener('click', () => {
+  if (!selected?.data.isComet) return;
+  pauseForDateStep();
+  simDays = nextPerihelionAfter(selected.data, currentJD()) - SIM_EPOCH_JD;
+  afterSimJump();
 });
 
 // ---------------------------------------------------------------- 달 위상 패널
@@ -970,6 +1035,7 @@ function animate() {
     updateMoonPanel();
   }
   updateDateReadout(); // 내부에서 날짜가 바뀐 프레임에만 DOM을 갱신
+  updateComets(cometEntries, currentJD(), t, REDUCED);
 
   // 궤도 위치 + 자전 (+ 근접도/위성 페이드 계산)
   let minRel = 1e9, earthRel = 1e9, sunRel = 1e9;
@@ -990,7 +1056,7 @@ function animate() {
         e.orbitLine.material.uniforms.uHead.value = ((a / (Math.PI * 2)) % 1 + 1) % 1;
       }
     }
-    if (d.rotationHours) {
+    if (!d.isComet && d.rotationHours) {
       e.mesh.rotation.y = (simDays * 24 / d.rotationHours) * Math.PI * 2;
     }
     if (e.clouds) e.clouds.rotation.y = e.mesh.rotation.y * 1.15;
