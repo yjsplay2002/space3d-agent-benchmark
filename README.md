@@ -19,6 +19,7 @@
 | `claude-opus-5` 1회차 | [space3d-opus5](https://space3d-opus5.vercel.app) | ❌ 창 높이 따라 3D 씬 소실 |
 | `claude-opus-5` 2회차 | [space3d-opus5-run2](https://space3d-opus5-run2.vercel.app) | ❌ 태양 블룸 폭주 |
 | `grok-4.5` | [space3d-grok45](https://space3d-grok45.vercel.app) | ❌ 렌즈플레어 고스트 |
+| `claude-fable-5.1` (번외) | [space3d-fable51](https://space3d-fable51.vercel.app) | ✅ 정상 · 벤치마크 외 |
 
 ## 결과
 
@@ -74,6 +75,7 @@ fable5/    claude-fable-5 결과물
 opus5/     claude-opus-5 1회차
 opus5r2/   claude-opus-5 2회차
 grok45/    grok-4.5 결과물
+fable51/   claude-fable-5.1 번외 결과물 (v1 스펙, 벤치마크 미포함)
 deck/      발표용 슬라이드 덱 (키보드 전환)
 video/     촬영용 16:9 덱 + 나레이션 대본 + 썸네일
 recording/ 촬영 세팅 (OBS 구성 · 원형 마스크)
@@ -88,6 +90,25 @@ bench.json 벤치마크 설정
 ```bash
 cd sol   # 또는 fable5, opus5, opus5r2, grok45
 npm install && npm run build && npm run selftest
+```
+
+## 번외: claude-fable-5.1 (2026-09-02)
+
+Fable 5.1 출시 후 같은 과제를 한 번 더 시켰다. **순위표에는 넣지 않는다.**
+
+- 벤치마크 하네스가 아니라 대화형 Claude Code 세션에서 실행. 시간·토큰 계측 없음.
+- 스펙이 다르다. 이 실행은 원본 v1 스펙(`space3d/SPEC.md`)을 썼다 — 실시간 역법,
+  날짜 컨트롤, 달 관측 뷰, `selftest` 항목이 없는 버전. 그래서 `npm run selftest`도 없다.
+- 결과: `npm run build` 성공, 배포 [space3d-fable51](https://space3d-fable51.vercel.app).
+  헤드리스(SwiftShader)로 콘솔 에러 0 · 행성 클릭 fly-in · 패널 데이터 · 토성 고리 · 궤도 빛 흐름 확인.
+  휠 줌·모바일·실 GPU 프레임레이트는 미확인.
+- 개발 중 잡은 버그: 렌즈플레어 bright-pass 를 블룸 **뒤**에 두면 블룸 헤일로가 threshold 를 넘어
+  화면 전체가 고스트로 덮인다(grok-4.5 실패 모드와 같은 계열). 플레어를 블룸 앞으로 옮겨 해결.
+  `?flare=0&bloom=0&grain=0` 로 패스별 끄기 가능.
+- 스크린샷: `docs/screenshots/fable51-*.jpg`
+
+```bash
+cd fable51 && npm install && npm run build
 ```
 
 ## 라이선스
