@@ -7,3 +7,4 @@ dist/
 
 .vercel/
 runs/
+__pycache__/
