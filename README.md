@@ -17,7 +17,7 @@
 |---|---|---|
 | `gpt-5.6-sol` | [space3d-sol](https://space3d-sol.vercel.app) | ✅ 정상 |
 | `claude-fable-5` | [space3d-fable5](https://space3d-fable5.vercel.app) | ✅ 정상 |
-| `claude-fable-5.1` | [space3d-fable51-bench](https://space3d-fable51-bench.vercel.app) | ✅ 정상 (2026-09-02 추가 실행) |
+| `claude-fable-5.1` | [space3d-fable51-bench](https://space3d-fable51-bench.vercel.app) | ❌ 실 GPU에서 3D 씬 전체 검정 (블룸 + HalfFloat MSAA) |
 | `claude-opus-5` 1회차 | [space3d-opus5](https://space3d-opus5.vercel.app) | ❌ 창 높이 따라 3D 씬 소실 |
 | `claude-opus-5` 2회차 | [space3d-opus5-run2](https://space3d-opus5-run2.vercel.app) | ❌ 태양 블룸 폭주 |
 | `grok-4.5` | [space3d-grok45](https://space3d-grok45.vercel.app) | ❌ 렌즈플레어 고스트 |
@@ -65,7 +65,7 @@
 
 **자동 검증은 아무것도 걸러내지 못했다.** 다섯 실행 전부 빌드 성공 · 역법
 자체테스트 통과 · 프리뷰 200 응답으로 **10/10 만점**인데, 브라우저에서
-열어보면 **2승 3패**다. 셸 명령으로 짤 수 있는 체크는 픽셀을 보지 못한다.
+열어보면 **2승 3패**다 (추가 실행 fable 5.1 까지 넣으면 2승 4패). 셸 명령으로 짤 수 있는 체크는 픽셀을 보지 못한다.
 
 **역법 정확도는 다섯 구현이 동일했다.** 행성 일심황경 상호 편차 **0.0000°**,
 삭망월 오차 4.44~4.56분. 가장 어려워 보였던 요소에 변별력이 없었다.
@@ -112,8 +112,13 @@ Fable 5.1 출시 후 같은 `PROMPT.md`(확장 스펙 전문 포함)로 한 번 
 - 실행 환경: Windows 11 · claude CLI 2.1.258 · node 22.22.3. 원래 5회는 claude 2.1.220.
 - 첫 실행은 20분·20턴 만에 claude.ai 월 지출 한도(HTTP 429)로 중단됐다. 그 실행은 폐기하고 한도 상향 후
   처음부터 다시 돌린 결과가 표의 값이다. 폐기분(약 $7)은 표에 포함하지 않았다.
-- 시각 검증: 1440×980 · 1456×816 두 뷰포트 헤드리스(SwiftShader) 스크린샷 `docs/screenshots/fable51-{980,816}.jpg`.
-  둘 다 정상 렌더링, 콘솔 에러 0. 달 인셋(2026-09-02 기우는 볼록달, 조명률 72%) 표시.
+- 시각 검증: **❌ 파손.** 실제 GPU(macOS Chrome, Windows RTX 3080/D3D11)에서 3D 캔버스가 전부 검게 나오고 CSS 라벨과
+  달 인셋만 보인다 (`docs/screenshots/fable51-gpu-black.jpg`). SwiftShader 헤드리스에서는 정상으로 나와
+  (`fable51-{980,816}.jpg`) 처음엔 정상으로 기록했다가 실기기 확인 후 정정했다.
+  원인: `UnrealBloomPass` + HalfFloat·MSAA(samples 4) 렌더타깃 조합. 블룸 패스를 빼거나, MSAA를 끄거나,
+  UnsignedByte 타깃으로 바꾸면 정상 (`fable51-gpu-nobloom.jpg`). GL 에러·콘솔 에러는 없다.
+  모델이 세션 중 playwright 로 자체 검증했지만 그 역시 SwiftShader 라 잡지 못했다 — opus-5 의 뷰포트 결함과 같은
+  "자동검증 10/10 인데 브라우저에서 깨짐" 사례.
   품질 점수(블라인드 심사)는 매기지 않았다.
 - 원본 계측: `docs/bench/claude-fable51-high/`.
 
