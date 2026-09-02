@@ -1,0 +1,15 @@
+[13:36:41] start contestant=claude-fable51-high model=claude-fable-5-1 work=runs\2026-09-02-space3d-moon-r2\claude-fable51-high\work
+[13:36:41] attempt 1/6 (resume=None)
+[14:27:52] claude done: wall=3070.6s turns=94 cost=$18.33 error=False rc=0
+[14:27:52] verify setup: npm install --no-audit --no-fund 2>&1 | tail -5
+[14:27:53] check package-json-exists: PASS (0.0s)
+[14:27:54] check build: PASS (1.0s)
+[14:27:54] check dist-output: PASS (0.1s)
+[14:27:55] check selftest: PASS (0.7s)
+[14:27:55] check ephemeris-module: PASS (0.0s)
+[14:27:55] check moonview-module: PASS (0.0s)
+[14:27:55] check date-step-controls: PASS (0.0s)
+[14:27:55] check no-runtime-cdn: PASS (0.1s)
+[14:27:55] check textures-present: PASS (0.1s)
+[14:28:03] check preview-serves: PASS (8.2s)
+[14:28:03] DONE completed=True verify=10/10 wall=51.2min turns=94 cost=$18.3322
