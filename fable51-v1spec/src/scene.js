@@ -7,9 +7,9 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { LensFlarePass } from './lensflare.js';
 
-// 렌즈플레어 on/off 스위치 (한 줄로 제거 가능)
+// 렌즈플레어: 실 GPU(D3D11/Metal)에서 고스트가 큰 얼룩으로 번져 기본 OFF. `?flare=1` 로 켬. SwiftShader 에서는 재현 안 됨.
 const DBG = new URLSearchParams(location.search);
-export const LENS_FLARE_ENABLED = DBG.get('flare') !== '0';
+export const LENS_FLARE_ENABLED = DBG.get('flare') === '1';
 
 const GrainVignetteShader = {
   uniforms: {
@@ -81,8 +81,8 @@ export function createScene(container) {
   const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 0.9, 0.6, 0.8);
   const flarePass = new LensFlarePass(width, height, {
     enabled: LENS_FLARE_ENABLED,
-    intensity: 0.5,
-    threshold: 1.4,
+    intensity: 0.35,
+    threshold: 1.7,
     maskRadius: 0.14,
   });
   const grainPass = new ShaderPass(GrainVignetteShader);

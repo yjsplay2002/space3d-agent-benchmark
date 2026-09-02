@@ -124,6 +124,7 @@ Fable 5.1 출시 후 같은 `PROMPT.md`(확장 스펙 전문 포함)로 한 번 
 
 별개로 `fable51-v1spec/` 은 Fable 5.1 이 **v1 스펙**(실시간 역법·날짜 컨트롤·달 관측·selftest 가 없는 초기
 `space3d/SPEC.md`)으로 만든 결과물이다. 순위와 무관하며 [space3d-fable51](https://space3d-fable51.vercel.app) 에 배포되어 있다.
+실 GPU 에서 스크린스페이스 렌즈플레어 고스트가 큰 얼룩으로 번져(SwiftShader 에서는 재현 안 됨) 플레어는 기본 OFF, `?flare=1` 로 켠다.
 
 ```bash
 cd fable51 && npm install && npm run build && npm run selftest

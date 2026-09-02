@@ -65,7 +65,7 @@ const ghostFrag = /* glsl */ `
       vec2 offset = uv + ghostVec * float(i);
       if (!inside(offset)) continue;
       float w = length(vec2(0.5) - offset) / length(vec2(0.5));
-      w = pow(1.0 - w, 10.0);
+      w = pow(1.0 - w, 16.0);
       vec3 tint = mix(vec3(1.0, 0.8, 0.6), vec3(0.5, 0.8, 1.0), float(i) / 6.0);
       result += chromatic(offset, dir, uDistortion) * w * tint;
     }
@@ -77,7 +77,7 @@ const ghostFrag = /* glsl */ `
       vec2 hd = (hp - vec2(0.5)) * vec2(uAspect, 1.0);
       float w = length(hd) / (0.5 * uAspect);
       w = pow(1.0 - clamp(w, 0.0, 1.0), 5.0);
-      result += chromatic(hp, dir, uDistortion) * w * vec3(0.7, 0.85, 1.0) * 0.6;
+      result += chromatic(hp, dir, uDistortion) * w * vec3(0.7, 0.85, 1.0) * 0.0;
     }
 
     gl_FragColor = vec4(result, 1.0);
@@ -149,10 +149,10 @@ export class LensFlarePass extends Pass {
       fragmentShader: ghostFrag,
       uniforms: {
         tDiffuse: { value: null },
-        uGhosts: { value: 5 },
+        uGhosts: { value: 4 },
         uDispersal: { value: 0.32 },
         uHaloWidth: { value: 0.42 },
-        uDistortion: { value: 0.0025 },
+        uDistortion: { value: 0.0 },
         uAspect: { value: 1 },
       },
     });
