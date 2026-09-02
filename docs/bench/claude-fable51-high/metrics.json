@@ -1,0 +1,78 @@
+{
+  "attempts": [
+    {
+      "wall_sec": 3070.6,
+      "rc": 0,
+      "timed_out": false,
+      "session_id": "4d5ff3e5-2f70-4b19-a5d6-e20c4f3a1129",
+      "duration_ms": 3063711,
+      "duration_api_ms": 2197941,
+      "num_turns": 94,
+      "is_error": false,
+      "subtype": "success",
+      "stop_reason": "end_turn",
+      "api_error_status": null,
+      "total_cost_usd": 18.332236249999994,
+      "usage": {
+        "input_tokens": 5114,
+        "cache_creation_input_tokens": 245193,
+        "cache_read_input_tokens": 7325383,
+        "output_tokens": 154024
+      },
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 6383,
+          "outputTokens": 23,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0064979999999999994,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-fable-5-1": {
+          "inputTokens": 279314,
+          "outputTokens": 177418,
+          "cacheReadInputTokens": 7325383,
+          "cacheCreationInputTokens": 245193,
+          "webSearchRequests": 0,
+          "costUSD": 18.325738249999993,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "thinkingTokens": 55892,
+          "canonicalModel": "claude-fable-5-1",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "result_tail": "phere shader, Saturn and Uranus rings, Moon, 3,600-rock InstancedMesh belt plus soft-particle dust, 8k milky way background plus soft-textured star points.\n- Orbits are custom tube geometry with a progress attribute, so the head glow sits exactly at the planet's mean anomaly and pulses flow in the orbit direction. Selected bodies get an equator spin ring that follows the tilted axis, so Venus and Uranus flow retrograde automatically.\n- Post chain: RenderPass, UnrealBloom, custom Chapman lens flare pass (quarter-res bright pass with sun mask, 5 clamped ghosts plus halo plus chromatic aberration, separable blur, additive with radial modulation), grain/vignette, ACES output.\n- Real-sky positions from JPL/Standish elements and a perturbed lunar theory. Longitudes are used unmodified; only radius is log-compressed.\n- Moon inset is a per-pixel 2D canvas render of the near side with tidal lock, terminator, earthshine, phase name, illumination, age, and days to full. Moon selection flies to an Earth-eye viewpoint with sunlight rays, lit-hemisphere shell and a dynamic \"why it looks like this\" explanation.\n\n**Verified in headless Chromium**: loading, date buttons and arrow keys jump instantly, panel count-up data, moon view with helpers, inset progression across gibbous, new, crescent and full, mobile layout, zero console errors, and correct render-target sizing at device pixel ratio 2. Real frame rate could not be measured because SwiftShader ran at about 1.5 fps.\n\n**Decisions the spec left open**\n- 1x means one simulated hour per real second, so the slider spans 6 minutes to about 42 days per second.\n- The date display uses the viewer's local calendar date while all computation is UTC Julian Day.\n- The moon label is hidden at the wide view and appears once the camera nears Earth.\n- On narrow screens the moon inset moves to the top right so it never overlaps the info panel.\n\nNothing was committed. The playwright scratch folder lives in the Temp directory outside the project.",
+      "stderr_tail": "",
+      "raw_stdout_tail": "",
+      "attempt": 1,
+      "limit_hit": false,
+      "verify": {
+        "passed": 10,
+        "total": 10,
+        "critical_failed": []
+      }
+    }
+  ],
+  "totals": {
+    "wall_sec": 3070.6,
+    "wall_min": 51.2,
+    "attempts": 1,
+    "turns": 94,
+    "input_tokens": 5114,
+    "cache_creation_input_tokens": 245193,
+    "cache_read_input_tokens": 7325383,
+    "output_tokens": 154024,
+    "cost_usd": 18.3322,
+    "noncache_tokens": 404331,
+    "total_tokens": 7729714,
+    "noncache_ratio": 0.0523
+  }
+}

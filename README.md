@@ -1,7 +1,8 @@
 # Space3D 코딩 에이전트 벤치마크
 
 같은 스펙 하나를 **Claude Opus 5 · Claude Fable 5 · GPT-5.6-Sol · Grok 4.5** 에
-각각 시켜 만들게 하고, 시간 · 토큰 · 버그 · 품질을 계측한 기록. 4개 모델 · 5회 실행.
+각각 시켜 만들게 하고, 시간 · 토큰 · 버그 · 품질을 계측한 기록. 4개 모델 · 5회 실행
++ 추가 실행 1회 (**Claude Fable 5.1**, 2026-09-02, 재구성 하네스 — 아래 참조).
 
 과제는 **어린이 교육용 3D 태양계 시뮬레이터** — Three.js, 실제 천체 위치 계산,
 하루 단위 날짜 이동, 지구에서 보는 달의 위상.
@@ -16,10 +17,10 @@
 |---|---|---|
 | `gpt-5.6-sol` | [space3d-sol](https://space3d-sol.vercel.app) | ✅ 정상 |
 | `claude-fable-5` | [space3d-fable5](https://space3d-fable5.vercel.app) | ✅ 정상 |
+| `claude-fable-5.1` | [space3d-fable51-bench](https://space3d-fable51-bench.vercel.app) | ✅ 정상 (2026-09-02 추가 실행) |
 | `claude-opus-5` 1회차 | [space3d-opus5](https://space3d-opus5.vercel.app) | ❌ 창 높이 따라 3D 씬 소실 |
 | `claude-opus-5` 2회차 | [space3d-opus5-run2](https://space3d-opus5-run2.vercel.app) | ❌ 태양 블룸 폭주 |
 | `grok-4.5` | [space3d-grok45](https://space3d-grok45.vercel.app) | ❌ 렌즈플레어 고스트 |
-| `claude-fable-5.1` (번외) | [space3d-fable51](https://space3d-fable51.vercel.app) | ✅ 정상 · 벤치마크 외 |
 
 ## 결과
 
@@ -29,6 +30,7 @@
 | `gpt-5.6-sol` | 26.8분 | 1 | N/A | 256,181 | 4,554,421 | $5.00 | 10/10 | 4,173줄 |
 | `claude-fable-5` | 32.9분 | 1 | 82 | 301,485 | 7,531,034 | $17.18 | 10/10 | 4,416줄 |
 | `claude-opus-5 · claude-opus5-high-run2` | 35.7분 | 1 | 55 | 366,268 | 6,839,478 | $9.56 | 10/10 | 7,578줄 |
+| `claude-fable-5.1` ¹ | 51.2분 | 1 | 94 | 404,331 | 7,729,714 | $18.33 | 10/10 | 3,721줄 |
 | `claude-opus-5 · claude-opus5-high` | 120.0분 | 2 | 153 | 611,136 | 32,150,726 | $25.52 | 10/10 | 8,293줄 |
 
 ### 캐시 / 비캐시 분리
@@ -39,6 +41,7 @@
 | `gpt-5.6-sol` | 193,393 | 0 | 62,788 | **256,181** | 4,298,240 | 4,554,421 | 5.6% |
 | `claude-fable-5` | 110 | 170,675 | 130,700 | **301,485** | 7,229,549 | 7,531,034 | 4.0% |
 | `claude-opus-5 · claude-opus5-high-run2` | 102 | 188,865 | 177,301 | **366,268** | 6,473,210 | 6,839,478 | 5.4% |
+| `claude-fable-5.1` ¹ | 5,114 | 245,193 | 154,024 | **404,331** | 7,325,383 | 7,729,714 | 5.2% |
 | `claude-opus-5 · claude-opus5-high` | 280 | 368,182 | 242,674 | **611,136** | 31,539,590 | 32,150,726 | 1.9% |
 
 **비캐시 합**이 모델이 실제로 새로 처리한 양이다. 캐시 읽기는 같은 문맥을
@@ -53,6 +56,9 @@
 | `claude-opus-5 · claude-opus5-high-run2` | 177,301 | 7,578줄 | **23.4** | 55 | 1 |
 | `claude-opus-5 · claude-opus5-high` | 242,674 | 8,293줄 | **29.3** | 153 | 2 |
 | `claude-fable-5` | 130,700 | 4,416줄 | **29.6** | 82 | 1 |
+| `claude-fable-5.1` ¹ | 154,024 | 3,721줄 | **41.4** | 94 | 1 |
+
+¹ 2026-09-02 추가 실행. 다른 PC(Windows) · 재구성 하네스 · claude CLI 2.1.258. 자세한 조건은 아래 "추가 실행" 참조.
 
 
 ## 핵심
@@ -75,7 +81,10 @@ fable5/    claude-fable-5 결과물
 opus5/     claude-opus-5 1회차
 opus5r2/   claude-opus-5 2회차
 grok45/    grok-4.5 결과물
-fable51/   claude-fable-5.1 번외 결과물 (v1 스펙, 벤치마크 미포함)
+fable51/   claude-fable-5.1 결과물 (2026-09-02 추가 실행)
+fable51-v1spec/  claude-fable-5.1 이 v1 스펙(역법·달 관측 없는 초기 스펙)으로 만든 별도 결과물 — 순위 무관
+harness/   run_benchmark.py — 원본 하네스 재구성본 (fable51 실행에 사용)
+docs/bench/claude-fable51-high/  fable51 실행 원본 계측 (summary · metrics · verify · harness.log)
 deck/      발표용 슬라이드 덱 (키보드 전환)
 video/     촬영용 16:9 덱 + 나레이션 대본 + 썸네일
 recording/ 촬영 세팅 (OBS 구성 · 원형 마스크)
@@ -88,27 +97,32 @@ bench.json 벤치마크 설정
 ## 각 결과물 실행
 
 ```bash
-cd sol   # 또는 fable5, opus5, opus5r2, grok45
+cd sol   # 또는 fable5, fable51, opus5, opus5r2, grok45
 npm install && npm run build && npm run selftest
 ```
 
-## 번외: claude-fable-5.1 (2026-09-02)
+## 추가 실행: claude-fable-5.1 (2026-09-02)
 
-Fable 5.1 출시 후 같은 과제를 한 번 더 시켰다. **순위표에는 넣지 않는다.**
+Fable 5.1 출시 후 같은 `PROMPT.md`(확장 스펙 전문 포함)로 한 번 더 돌렸다.
+표에는 ¹ 표시로 들어가 있다. **원래 5회와 같은 조건이 아닌 점**:
 
-- 벤치마크 하네스가 아니라 대화형 Claude Code 세션에서 실행. 시간·토큰 계측 없음.
-- 스펙이 다르다. 이 실행은 원본 v1 스펙(`space3d/SPEC.md`)을 썼다 — 실시간 역법,
-  날짜 컨트롤, 달 관측 뷰, `selftest` 항목이 없는 버전. 그래서 `npm run selftest`도 없다.
-- 결과: `npm run build` 성공, 배포 [space3d-fable51](https://space3d-fable51.vercel.app).
-  헤드리스(SwiftShader)로 콘솔 에러 0 · 행성 클릭 fly-in · 패널 데이터 · 토성 고리 · 궤도 빛 흐름 확인.
-  휠 줌·모바일·실 GPU 프레임레이트는 미확인.
-- 개발 중 잡은 버그: 렌즈플레어 bright-pass 를 블룸 **뒤**에 두면 블룸 헤일로가 threshold 를 넘어
-  화면 전체가 고스트로 덮인다(grok-4.5 실패 모드와 같은 계열). 플레어를 블룸 앞으로 옮겨 해결.
-  `?flare=0&bloom=0&grain=0` 로 패스별 끄기 가능.
-- 스크린샷: `docs/screenshots/fable51-*.jpg`
+- 원본 하네스 스크립트가 없는 PC라 `harness/run_benchmark.py` 로 재구성했다. bench.json 의미론은 같다
+  (빈 디렉토리 · `claude -p --safe-mode --effort high` · verify 10항목 · critical 실패 시 resume 재시도 최대 6회 ·
+  실패 출력 되먹임 · 시도 합산). 원본과 완전히 동일함은 보장 못 한다.
+- 실행 환경: Windows 11 · claude CLI 2.1.258 · node 22.22.3. 원래 5회는 claude 2.1.220.
+- 첫 실행은 20분·20턴 만에 claude.ai 월 지출 한도(HTTP 429)로 중단됐다. 그 실행은 폐기하고 한도 상향 후
+  처음부터 다시 돌린 결과가 표의 값이다. 폐기분(약 $7)은 표에 포함하지 않았다.
+- 시각 검증: 1440×980 · 1456×816 두 뷰포트 헤드리스(SwiftShader) 스크린샷 `docs/screenshots/fable51-{980,816}.jpg`.
+  둘 다 정상 렌더링, 콘솔 에러 0. 달 인셋(2026-09-02 기우는 볼록달, 조명률 72%) 표시.
+  품질 점수(블라인드 심사)는 매기지 않았다.
+- 원본 계측: `docs/bench/claude-fable51-high/`.
+
+별개로 `fable51-v1spec/` 은 Fable 5.1 이 **v1 스펙**(실시간 역법·날짜 컨트롤·달 관측·selftest 가 없는 초기
+`space3d/SPEC.md`)으로 만든 결과물이다. 순위와 무관하며 [space3d-fable51](https://space3d-fable51.vercel.app) 에 배포되어 있다.
 
 ```bash
-cd fable51 && npm install && npm run build
+cd fable51 && npm install && npm run build && npm run selftest
+python harness/run_benchmark.py --config bench.json --contestant claude-fable51-high
 ```
 
 ## 라이선스

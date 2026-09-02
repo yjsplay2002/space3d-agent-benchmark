@@ -1,177 +1,145 @@
+// camera.js — 시네마틱 카메라 이동(fly-in, cubic easing) / 공전 추적 / 지구에서 보는 달 시점 / 유휴 드리프트·패럴랙스
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-const OVERVIEW_POS = new THREE.Vector3(0, 170, 330);
-const ORIGIN = new THREE.Vector3(0, 0, 0);
-const UP = new THREE.Vector3(0, 1, 0);
+import { EARTH_R } from './bodies.js';
 
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const UP = new THREE.Vector3(0, 1, 0);
 
-/**
- * 시네마틱 카메라 리그: OrbitControls + fly-in + 공전 추적 + 유휴 드리프트 + 커서 패럴랙스
- */
-export function createCameraRig(camera, domElement) {
-  const controls = new OrbitControls(camera, domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.06;
-  controls.rotateSpeed = 0.55;
-  controls.zoomSpeed = 1.15;
-  controls.enablePan = false;
-  controls.minDistance = 1.2;
-  controls.maxDistance = 1500;
-  controls.maxPolarAngle = Math.PI * 0.97;
-  controls.autoRotateSpeed = 0.12;
-  controls.target.copy(ORIGIN);
+export const OVERVIEW_POS = new THREE.Vector3(0, 165, 320);
+export const OVERVIEW_TARGET = new THREE.Vector3(0, 0, 0);
 
-  const state = {
-    mode: 'overview', // overview | flying | follow
-    body: null,
-    flight: null,
-    lastBodyPos: new THREE.Vector3(),
-    lastInteraction: performance.now(),
-    pointer: new THREE.Vector2(0, 0),
-    parallaxApplied: new THREE.Vector3(),
-    parallaxTarget: new THREE.Vector3(),
-  };
-
-  controls.addEventListener('start', () => {
-    state.lastInteraction = performance.now();
-  });
-  domElement.addEventListener('wheel', () => (state.lastInteraction = performance.now()), { passive: true });
-  domElement.addEventListener('pointerdown', () => (state.lastInteraction = performance.now()));
-
-  const tmpBodyPos = new THREE.Vector3();
-  const tmpEndPos = new THREE.Vector3();
-  const tmpEndTarget = new THREE.Vector3();
-  const tmpDir = new THREE.Vector3();
-  const tmpRight = new THREE.Vector3();
-  const tmpDelta = new THREE.Vector3();
-
-  function bodyWorldPos(body, out) {
-    body.group.getWorldPosition(out);
-    return out;
+export class CameraDirector {
+  constructor(camera, controls) {
+    this.camera = camera;
+    this.controls = controls;
+    this.mode = 'free';          // free | fly | follow | moon
+    this.body = null;
+    this.fly = null;
+    this.pointer = new THREE.Vector2();
+    this.parallax = new THREE.Vector2();
+    this.lastInteraction = performance.now();
+    this._bodyPos = new THREE.Vector3();
+    this._prevBodyPos = new THREE.Vector3();
+    this._target = new THREE.Vector3();
+    this._tmp = new THREE.Vector3();
+    this._tmp2 = new THREE.Vector3();
+    this.onArrive = null;
+    controls.addEventListener('start', () => { this.lastInteraction = performance.now(); });
+    controls.addEventListener('change', () => { this.lastInteraction = performance.now(); });
   }
 
-  function startFlight(body, duration) {
-    // 패럴랙스 오프셋 제거 후 시작점 고정
-    camera.position.sub(state.parallaxApplied);
-    state.parallaxApplied.set(0, 0, 0);
-    state.flight = {
-      t: 0,
-      start: performance.now(),
-      dur: duration,
-      fromPos: camera.position.clone(),
-      fromTarget: controls.target.clone(),
-      camOffset: new THREE.Vector3(),
-      targetOffset: new THREE.Vector3(),
+  setPointer(x, y) { this.pointer.set(x, y); }
+
+  _startFlight(endFn, duration, then, body) {
+    this.fly = {
+      t: 0, duration, endFn, then,
+      startPos: this.camera.position.clone(),
+      startTarget: this.mode === 'fly' ? this._target.clone() : this.controls.target.clone(),
     };
-    state.body = body;
-    state.mode = 'flying';
-    controls.enabled = false;
-    controls.autoRotate = false;
+    this.body = body;
+    this.mode = 'fly';
+    this.controls.enabled = false;
+    this.controls.autoRotate = false;
   }
 
-  function focus(body) {
-    const r = body.radius;
-    bodyWorldPos(body, tmpBodyPos);
-    // 현재 카메라 방향 유지 + 약간 위에서 내려다봄
-    tmpDir.subVectors(camera.position, tmpBodyPos);
-    if (tmpDir.lengthSq() < 1e-6) tmpDir.set(0, 0.4, 1);
-    tmpDir.normalize();
-    tmpDir.y = THREE.MathUtils.clamp(tmpDir.y, 0.18, 0.55);
-    tmpDir.normalize();
-    const dist = Math.max(r * 4.4, 3.2);
-
-    const dx = camera.position.distanceTo(tmpBodyPos);
-    const dur = THREE.MathUtils.clamp(1.4 + dx / 260, 1.6, 3.2);
-    startFlight(body, dur);
-    state.flight.camOffset.copy(tmpDir).multiplyScalar(dist);
-
-    // 행성이 화면 좌측(모바일: 상단)에 오도록 타깃 오프셋
-    const viewDir = tmpDir.clone().negate();
-    tmpRight.crossVectors(viewDir, UP).normalize();
-    if (window.innerWidth < 720) {
-      state.flight.targetOffset.copy(UP).multiplyScalar(-r * 1.15);
-    } else {
-      state.flight.targetOffset.copy(tmpRight).multiplyScalar(r * 1.5);
-    }
-    controls.minDistance = Math.max(r * 1.25, 0.8);
+  // 행성/태양: 옆에서 본 시네마틱 시점. 도착 시 행성이 화면 좌측.
+  flyTo(body, earthBody = null) {
+    if (body.id === 'moon' && earthBody) return this.flyToMoonView(body, earthBody);
+    const bodyPos = body.worldPosition(this._bodyPos);
+    const dist = Math.max(body.radius * 4.6, 2.4);
+    const dir = this._tmp.copy(this.camera.position).sub(bodyPos);
+    if (dir.lengthSq() < 1e-6) dir.set(0, 0.4, 1);
+    dir.normalize();
+    dir.y = Math.max(dir.y, 0.28);
+    dir.normalize();
+    const camOffset = dir.clone().multiplyScalar(dist);
+    // 카메라 오른쪽 벡터 → 목표점을 오른쪽으로 옮겨 행성이 왼쪽에 오도록
+    const forward = camOffset.clone().negate().normalize();
+    const right = new THREE.Vector3().crossVectors(forward, UP).normalize();
+    const targetOffset = right.multiplyScalar(body.radius * 1.15);
+    const endFn = () => {
+      const p = body.worldPosition(this._bodyPos);
+      return { pos: this._tmp.copy(p).add(camOffset), target: this._tmp2.copy(p).add(targetOffset) };
+    };
+    const flightDist = this.camera.position.distanceTo(endFn().pos);
+    const duration = THREE.MathUtils.clamp(1.4 + flightDist / 220, 1.6, 3.2);
+    this._startFlight(endFn, duration, 'follow', body);
+    this.controls.minDistance = Math.max(body.radius * 1.5, 0.6);
   }
 
-  function overview() {
-    const dx = camera.position.distanceTo(OVERVIEW_POS);
-    startFlight(null, THREE.MathUtils.clamp(1.2 + dx / 300, 1.6, 3.0));
-    controls.minDistance = 1.2;
+  // 달: 지구 쪽에서 달을 바라보는 시점 (지구에서 본 시선 방향)
+  flyToMoonView(moon, earth) {
+    const endFn = () => {
+      const e = earth.worldPosition(this._tmp);
+      const m = moon.worldPosition(this._tmp2);
+      const dir = m.clone().sub(e).normalize();
+      const pos = e.clone().addScaledVector(dir, EARTH_R * 1.7);
+      return { pos, target: m.clone() };
+    };
+    const flightDist = this.camera.position.distanceTo(endFn().pos);
+    const duration = THREE.MathUtils.clamp(1.6 + flightDist / 200, 1.8, 3.4);
+    this._startFlight(endFn, duration, 'moon', moon);
   }
 
-  function setPointer(ndcX, ndcY) {
-    state.pointer.set(ndcX, ndcY);
+  flyToOverview() {
+    const endFn = () => ({ pos: OVERVIEW_POS.clone(), target: OVERVIEW_TARGET.clone() });
+    const flightDist = this.camera.position.distanceTo(OVERVIEW_POS);
+    const duration = THREE.MathUtils.clamp(1.2 + flightDist / 260, 1.4, 2.8);
+    this._startFlight(endFn, duration, 'free', null);
+    this.controls.minDistance = 0.6;
   }
 
-  function update(dt) {
-    const now = performance.now();
-
-    // 이전 프레임 패럴랙스 제거
-    camera.position.sub(state.parallaxApplied);
-
-    if (state.mode === 'flying' && state.flight) {
-      const f = state.flight;
-      f.t = Math.min(1, (now - f.start) / 1000 / f.dur);
-      const e = easeInOutCubic(f.t);
-      if (state.body) {
-        bodyWorldPos(state.body, tmpBodyPos);
-        tmpEndPos.addVectors(tmpBodyPos, f.camOffset);
-        tmpEndTarget.addVectors(tmpBodyPos, f.targetOffset);
-      } else {
-        tmpEndPos.copy(OVERVIEW_POS);
-        tmpEndTarget.copy(ORIGIN);
-      }
-      camera.position.lerpVectors(f.fromPos, tmpEndPos, e);
-      controls.target.lerpVectors(f.fromTarget, tmpEndTarget, e);
+  update(dt) {
+    const cam = this.camera, controls = this.controls;
+    if (this.mode === 'fly' && this.fly) {
+      const f = this.fly;
+      f.t = Math.min(1, f.t + dt / f.duration);
+      const k = easeInOutCubic(f.t);
+      const end = f.endFn();
+      cam.position.lerpVectors(f.startPos, end.pos, k);
+      this._target.lerpVectors(f.startTarget, end.target, k);
+      cam.up.copy(UP);
+      cam.lookAt(this._target);
       if (f.t >= 1) {
-        state.mode = state.body ? 'follow' : 'overview';
-        if (state.body) state.lastBodyPos.copy(tmpBodyPos);
-        state.flight = null;
-        controls.enabled = true;
-        state.lastInteraction = now;
+        this.mode = f.then;
+        this.fly = null;
+        controls.target.copy(this._target);
+        if (this.mode === 'moon') {
+          controls.enabled = false;
+        } else {
+          controls.enabled = true;
+          if (this.body) this.body.worldPosition(this._prevBodyPos);
+          controls.update();
+        }
+        this.onArrive?.(this.mode, this.body);
       }
-    } else if (state.mode === 'follow' && state.body) {
-      bodyWorldPos(state.body, tmpBodyPos);
-      tmpDelta.subVectors(tmpBodyPos, state.lastBodyPos);
-      camera.position.add(tmpDelta);
-      controls.target.add(tmpDelta);
-      state.lastBodyPos.copy(tmpBodyPos);
+    } else if (this.mode === 'follow' && this.body) {
+      const p = this.body.worldPosition(this._bodyPos);
+      const delta = this._tmp.subVectors(p, this._prevBodyPos);
+      cam.position.add(delta);
+      controls.target.add(delta);
+      this._prevBodyPos.copy(p);
+      controls.autoRotate = performance.now() - this.lastInteraction > 4000;
+      controls.update();
+    } else if (this.mode === 'moon' && this.body) {
+      // 매 프레임 지구→달 시선으로 고정 (달이 공전하므로 계속 갱신)
+      const e = this.body.parent.worldPosition(this._tmp);
+      const m = this.body.worldPosition(this._tmp2);
+      const dir = m.clone().sub(e).normalize();
+      cam.position.copy(e).addScaledVector(dir, EARTH_R * 1.7);
+      cam.up.copy(UP);
+      cam.lookAt(m);
+      controls.target.copy(m);
+    } else {
+      controls.autoRotate = performance.now() - this.lastInteraction > 4000;
+      controls.update();
     }
 
-    // 유휴 드리프트 (전체 뷰에서만)
-    const idle = now - state.lastInteraction > 4000;
-    controls.autoRotate = idle && state.mode === 'overview';
-
-    controls.update();
-
-    // 커서 패럴랙스
-    const distToTarget = camera.position.distanceTo(controls.target);
-    const amount = distToTarget * 0.012;
-    tmpDir.subVectors(controls.target, camera.position).normalize();
-    tmpRight.crossVectors(tmpDir, UP).normalize();
-    const upv = new THREE.Vector3().crossVectors(tmpRight, tmpDir).normalize();
-    state.parallaxTarget
-      .copy(tmpRight)
-      .multiplyScalar(state.pointer.x * amount)
-      .addScaledVector(upv, state.pointer.y * amount);
-    state.parallaxApplied.lerp(state.parallaxTarget, 1 - Math.pow(0.001, dt));
-    camera.position.add(state.parallaxApplied);
+    // 커서 패럴랙스 (씬이 살짝 반응)
+    this.parallax.x += (this.pointer.x - this.parallax.x) * 0.04;
+    this.parallax.y += (this.pointer.y - this.parallax.y) * 0.04;
+    const amt = this.mode === 'moon' ? 0.05 : 0.018;
+    cam.rotateY(-this.parallax.x * amt);
+    cam.rotateX(this.parallax.y * amt * 0.6);
   }
-
-  return {
-    controls,
-    state,
-    focus,
-    overview,
-    setPointer,
-    update,
-    get isFollowing() {
-      return state.mode === 'follow' || (state.mode === 'flying' && !!state.body);
-    },
-  };
 }

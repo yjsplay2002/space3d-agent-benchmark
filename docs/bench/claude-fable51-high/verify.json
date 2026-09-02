@@ -1,0 +1,127 @@
+{
+  "setup": [
+    {
+      "cmd": "npm install --no-audit --no-fund 2>&1 | tail -5",
+      "rc": 0,
+      "stdout": "\nup to date in 611ms\n",
+      "stderr": "",
+      "sec": 1.1,
+      "timeout": false
+    }
+  ],
+  "checks": [
+    {
+      "name": "package-json-exists",
+      "cmd": "test -f package.json",
+      "critical": true,
+      "ok": true,
+      "rc": 0,
+      "stdout": "",
+      "stderr": "",
+      "sec": 0.0,
+      "timeout": false
+    },
+    {
+      "name": "build",
+      "cmd": "npm run build",
+      "critical": true,
+      "ok": true,
+      "rc": 0,
+      "stdout": "\n> space3d@1.0.0 build\n> vite build\n\nvite v8.2.2 building client environment for production...\ntransforming...\n✓ 29 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                   4.53 kB │ gzip:   1.75 kB\ndist/assets/index-DZiX-48M.css   10.33 kB │ gzip:   3.03 kB\ndist/assets/index-B7l9DCj8.js   646.88 kB │ gzip: 168.18 kB\n\n✓ built in 203ms\n",
+      "stderr": "",
+      "sec": 1.0,
+      "timeout": false
+    },
+    {
+      "name": "dist-output",
+      "cmd": "test -f dist/index.html && test -d dist/assets",
+      "critical": true,
+      "ok": true,
+      "rc": 0,
+      "stdout": "",
+      "stderr": "",
+      "sec": 0.1,
+      "timeout": false
+    },
+    {
+      "name": "selftest",
+      "cmd": "npm run selftest",
+      "critical": true,
+      "ok": true,
+      "rc": 0,
+      "stdout": "\n> space3d@1.0.0 selftest\n> node scripts/selftest.mjs\n\n달 위상 (400일, 하루 간격)\n      평균 삭망월 = 29.5296일\n  ✔ 1. 보름 평균 간격 = 29.53 ± 0.3일 (보름 13회)\n      하루 평균 전진 = 0.98578°\n  ✔ 2. 지구 일심 황경 하루 평균 전진 = 0.9856° ± 0.02°\n  ✔ 3. 조명률 0~1, 보름 > 0.99, 삭 < 0.01\n  ✔ 4. 위상각 0~360 범위, 단조 증가(360에서 랩)\n행성 공전 주기 (황경 360° 회전 소요일)\n      측정 87.97일 (오차 0.000%)\n  ✔ 5. mercury 공전 주기 ±1% (기준 87.969일)\n      측정 224.70일 (오차 0.000%)\n  ✔ 5. venus 공전 주기 ±1% (기준 224.701일)\n      측정 365.26일 (오차 0.000%)\n  ✔ 5. earth 공전 주기 ±1% (기준 365.256일)\n      측정 686.98일 (오차 0.000%)\n  ✔ 5. mars 공전 주기 ±1% (기준 686.98일)\n      측정 4332.83일 (오차 0.006%)\n  ✔ 5. jupiter 공전 주기 ±1% (기준 4332.59일)\n      측정 10755.34일 (오차 0.036%)\n  ✔ 5. saturn 공전 주기 ±1% (기준 10759.22일)\n      측정 30686.15일 (오차 0.008%)\n  ✔ 5. uranus 공전 주기 ±1% (기준 30688.5일)\n      측정 60189.63일 (오차 0.013%)\n  ✔ 5. neptune 공전 주기 ±1% (기준 60182일)\n  ✔ 보너스. 2025-01-13 보름 ±3시간 이내\n\n모든 검사 통과\n",
+      "stderr": "",
+      "sec": 0.7,
+      "timeout": false
+    },
+    {
+      "name": "ephemeris-module",
+      "cmd": "test -f src/ephemeris.js",
+      "critical": false,
+      "ok": true,
+      "rc": 0,
+      "stdout": "",
+      "stderr": "",
+      "sec": 0.0,
+      "timeout": false
+    },
+    {
+      "name": "moonview-module",
+      "cmd": "test -f src/moonview.js",
+      "critical": false,
+      "ok": true,
+      "rc": 0,
+      "stdout": "",
+      "stderr": "",
+      "sec": 0.0,
+      "timeout": false
+    },
+    {
+      "name": "date-step-controls",
+      "cmd": "grep -rqiE '하루|oneDay|stepDay|addDays|dayStep|prevDay|nextDay' src/ index.html",
+      "critical": false,
+      "ok": true,
+      "rc": 0,
+      "stdout": "",
+      "stderr": "",
+      "sec": 0.0,
+      "timeout": false
+    },
+    {
+      "name": "no-runtime-cdn",
+      "cmd": "! grep -rniE 'src=\"https?://|from \"https?://|import\\(\"https?://' index.html src/ 2>/dev/null | grep -viE 'solarsystemscope|texture'",
+      "critical": false,
+      "ok": true,
+      "rc": 0,
+      "stdout": "",
+      "stderr": "",
+      "sec": 0.1,
+      "timeout": false
+    },
+    {
+      "name": "textures-present",
+      "cmd": "test -d public/textures && test $(ls -1 public/textures 2>/dev/null | wc -l) -ge 5",
+      "critical": false,
+      "ok": true,
+      "rc": 0,
+      "stdout": "",
+      "stderr": "",
+      "sec": 0.1,
+      "timeout": false
+    },
+    {
+      "name": "preview-serves",
+      "cmd": "(npm run preview -- --port 4399 >/tmp/prev_$$.log 2>&1 & echo $! > /tmp/prevpid_$$) ; sleep 8 ; curl -sf -o /dev/null http://localhost:4399/ ; rc=$? ; kill $(cat /tmp/prevpid_$$) 2>/dev/null ; exit $rc",
+      "critical": false,
+      "ok": true,
+      "rc": 0,
+      "stdout": "",
+      "stderr": "",
+      "sec": 8.2,
+      "timeout": false
+    }
+  ],
+  "passed": 10,
+  "total": 10,
+  "critical_failed": []
+}

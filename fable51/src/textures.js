@@ -1,105 +1,119 @@
+// textures.js — 텍스처 로딩(진행률) + 실패 시 canvas 프로시저럴 폴백
 import * as THREE from 'three';
 
-// ---------- 프로시저럴 폴백 텍스처 (다운로드 실패 시) ----------
-function noiseCanvas(w, h, base, bands, seed = 1) {
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  const ctx = c.getContext('2d');
+const FILES = {
+  sun: '2k_sun.jpg',
+  mercury: '2k_mercury.jpg',
+  venus: '2k_venus_surface.jpg',
+  earthDay: '2k_earth_daymap.jpg',
+  earthNight: '2k_earth_nightmap.jpg',
+  earthClouds: '2k_earth_clouds.jpg',
+  moon: '2k_moon.jpg',
+  mars: '2k_mars.jpg',
+  jupiter: '2k_jupiter.jpg',
+  saturn: '2k_saturn.jpg',
+  saturnRing: '2k_saturn_ring_alpha.png',
+  uranus: '2k_uranus.jpg',
+  neptune: '2k_neptune.jpg',
+  stars: '8k_stars_milky_way.jpg',
+};
+
+const FALLBACK_COLORS = {
+  sun: ['#ffd27a', '#ff9a1f', '#ffe9b0'],
+  mercury: ['#8d8781', '#5c5752', '#b3ada6'],
+  venus: ['#e6c48a', '#c9a15f', '#f2dcaa'],
+  earthDay: ['#1d4f8a', '#2c8c4a', '#5b98d6'],
+  earthNight: ['#020208', '#0a0a20', '#ffd27a'],
+  earthClouds: ['#ffffff', '#ffffff', '#ffffff'],
+  moon: ['#8f8f8f', '#5a5a5a', '#b5b5b5'],
+  mars: ['#b8552f', '#8a3a1f', '#d97f52'],
+  jupiter: ['#d9b48c', '#a9805a', '#efd7b8'],
+  saturn: ['#e2c58f', '#c4a468', '#f3e0b4'],
+  saturnRing: ['#d9c8a8', '#b39d78', '#efe3c8'],
+  uranus: ['#9be3ea', '#7ccbd4', '#c6f0f4'],
+  neptune: ['#3b5fd9', '#2a45a8', '#6f8cff'],
+  stars: ['#000005', '#050a18', '#ffffff'],
+};
+
+function hash(x, y, seed) {
+  const s = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
+  return s - Math.floor(s);
+}
+
+// 부드러운 값 노이즈
+function valueNoise(x, y, seed) {
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash(xi, yi, seed), b = hash(xi + 1, yi, seed);
+  const c = hash(xi, yi + 1, seed), d = hash(xi + 1, yi + 1, seed);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+
+function fbm(x, y, seed, oct = 4) {
+  let s = 0, amp = 0.5, f = 1;
+  for (let i = 0; i < oct; i++) { s += amp * valueNoise(x * f, y * f, seed + i); amp *= 0.5; f *= 2; }
+  return s;
+}
+
+function hexToRgb(h) {
+  const n = parseInt(h.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// 프로시저럴 폴백 텍스처 (밴드 + 노이즈)
+export function makeProceduralTexture(key, w = 1024, h = 512) {
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const [c0, c1, c2] = (FALLBACK_COLORS[key] || FALLBACK_COLORS.moon).map(hexToRgb);
   const img = ctx.createImageData(w, h);
   const d = img.data;
-  const [r, g, b] = base;
-  let s = seed * 9301 + 49297;
-  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+  const seed = key.length * 13.7;
+  const banded = key === 'jupiter' || key === 'saturn' || key === 'uranus' || key === 'neptune';
+  const ring = key === 'saturnRing';
+  const stars = key === 'stars';
   for (let y = 0; y < h; y++) {
-    const band = bands ? 0.5 + 0.5 * Math.sin((y / h) * Math.PI * bands * 2 + Math.sin(y * 0.05) * 2) : 1;
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      const n = 0.75 + rnd() * 0.5;
-      const f = n * (0.7 + 0.3 * band);
-      d[i] = Math.min(255, r * f);
-      d[i + 1] = Math.min(255, g * f);
-      d[i + 2] = Math.min(255, b * f);
-      d[i + 3] = 255;
+      const u = x / w, v = y / h;
+      let t;
+      if (stars) {
+        const n = fbm(u * 6, v * 3, seed, 5);
+        const band = Math.exp(-Math.pow((v - 0.5 + 0.15 * Math.sin(u * 6.28)) * 6, 2));
+        const s = hash(x, y, seed) > 0.997 ? 1 : 0;
+        const r = c1[0] * n * band + 255 * s, g = c1[1] * n * band + 255 * s, b = c1[2] * 2 * n * band + 255 * s;
+        d[i] = Math.min(255, r); d[i + 1] = Math.min(255, g); d[i + 2] = Math.min(255, b); d[i + 3] = 255;
+        continue;
+      }
+      if (ring) {
+        const n = fbm(u * 40, 0, seed, 3);
+        const alpha = u < 0.05 || (u > 0.55 && u < 0.6) ? 0.15 : 0.55 + 0.45 * n;
+        d[i] = c0[0]; d[i + 1] = c0[1]; d[i + 2] = c0[2]; d[i + 3] = Math.floor(alpha * 255);
+        continue;
+      }
+      if (banded) t = 0.5 + 0.5 * Math.sin(v * 40 + fbm(u * 8, v * 8, seed) * 6);
+      else t = fbm(u * 8, v * 4, seed, 5);
+      const k = key === 'earthClouds' ? 1 : t;
+      const mix = (a, b, f) => a + (b - a) * f;
+      let r = mix(c1[0], c0[0], k), g = mix(c1[1], c0[1], k), b = mix(c1[2], c0[2], k);
+      const hi = fbm(u * 16 + 3, v * 16, seed + 9, 3);
+      if (hi > 0.6) { const f = (hi - 0.6) * 2; r = mix(r, c2[0], f); g = mix(g, c2[1], f); b = mix(b, c2[2], f); }
+      d[i] = r; d[i + 1] = g; d[i + 2] = b;
+      d[i + 3] = key === 'earthClouds' ? Math.max(0, Math.min(255, (t - 0.45) * 700)) : 255;
     }
   }
   ctx.putImageData(img, 0, 0);
-  return c;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
-const FALLBACK_COLORS = {
-  sun: [255, 170, 60],
-  mercury: [150, 145, 140],
-  venus: [225, 190, 120],
-  earth: [70, 130, 200],
-  earth_night: [10, 10, 25],
-  earth_clouds: [255, 255, 255],
-  moon: [185, 185, 185],
-  mars: [200, 100, 70],
-  jupiter: [215, 170, 120],
-  saturn: [225, 205, 160],
-  uranus: [150, 210, 230],
-  neptune: [80, 110, 240],
-  stars: [4, 4, 12],
-};
-
-export function fallbackFor(url) {
-  const key = Object.keys(FALLBACK_COLORS).find((k) => url.includes(k.replace('_', '_'))) ||
-    (url.includes('night') ? 'earth_night' : url.includes('cloud') ? 'earth_clouds' : url.includes('star') ? 'stars' : null);
-  const base = FALLBACK_COLORS[key] || [128, 128, 128];
-  const bands = /jupiter|saturn|neptune|uranus/.test(url) ? 6 : 0;
-  if (url.includes('ring')) return ringCanvas();
-  if (url.includes('star')) return starfieldCanvas();
-  return noiseCanvas(1024, 512, base, bands, url.length);
-}
-
-export function ringCanvas(tint = [230, 210, 170], count = 60, seed = 7) {
-  const c = document.createElement('canvas');
-  c.width = 1024;
-  c.height = 16;
-  const ctx = c.getContext('2d');
-  let s = seed;
-  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
-  for (let x = 0; x < c.width; x++) {
-    const t = x / c.width;
-    const a = (0.35 + 0.65 * Math.abs(Math.sin(t * count) * Math.sin(t * 13.7))) * (t > 0.12 ? 1 : t / 0.12) * (rnd() * 0.4 + 0.6);
-    const gap = t > 0.62 && t < 0.68 ? 0.1 : 1;
-    ctx.fillStyle = `rgba(${tint[0]},${tint[1]},${tint[2]},${(a * gap).toFixed(3)})`;
-    ctx.fillRect(x, 0, 1, c.height);
-  }
-  return c;
-}
-
-export function starfieldCanvas() {
-  const c = document.createElement('canvas');
-  c.width = 2048;
-  c.height = 1024;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#02030a';
-  ctx.fillRect(0, 0, c.width, c.height);
-  const grad = ctx.createLinearGradient(0, 0, c.width, c.height);
-  grad.addColorStop(0, 'rgba(40,50,90,0)');
-  grad.addColorStop(0.5, 'rgba(60,70,120,0.35)');
-  grad.addColorStop(1, 'rgba(40,50,90,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, c.width, c.height);
-  for (let i = 0; i < 4000; i++) {
-    const x = Math.random() * c.width;
-    const y = Math.random() * c.height;
-    const r = Math.random() * 1.4 + 0.2;
-    ctx.fillStyle = `rgba(255,255,255,${(Math.random() * 0.8 + 0.2).toFixed(2)})`;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  return c;
-}
-
-// 원형 소프트 파티클 (사각형 금지)
-export function softParticleTexture(size = 128) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
+// 소프트 원형 파티클 텍스처 (기본 사각형 금지)
+export function makeSoftParticleTexture(size = 64) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   g.addColorStop(0, 'rgba(255,255,255,1)');
   g.addColorStop(0.25, 'rgba(255,255,255,0.8)');
@@ -107,35 +121,36 @@ export function softParticleTexture(size = 128) {
   g.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
-// ---------- 로더 ----------
-export function createTextureLoader(onProgress, onDone, maxAnisotropy = 8) {
-  const manager = new THREE.LoadingManager();
-  manager.onProgress = (url, loaded, total) => onProgress?.(loaded / total, url);
-  manager.onLoad = () => onDone?.();
-  manager.onError = (url) => console.warn('[textures] 로드 실패, 프로시저럴 폴백 사용:', url);
-  const loader = new THREE.TextureLoader(manager);
-  const maxAniso = Math.min(16, maxAnisotropy || 8);
+// 전체 로딩. onProgress(loaded, total)
+export function loadTextures(onProgress, maxAnisotropy = 8) {
+  const loader = new THREE.TextureLoader();
+  const keys = Object.keys(FILES);
+  const total = keys.length;
+  let loaded = 0;
+  const result = { fallbacks: [] };
 
-  function load(url, { srgb = true, aniso = true } = {}) {
-    const tex = loader.load(
-      url,
+  const tasks = keys.map((key) => new Promise((resolve) => {
+    const finish = (tex, fallback) => {
+      tex.colorSpace = key === 'saturnRing' ? THREE.SRGBColorSpace : THREE.SRGBColorSpace;
+      tex.anisotropy = maxAnisotropy;
+      if (key === 'stars') tex.mapping = THREE.EquirectangularReflectionMapping;
+      result[key] = tex;
+      if (fallback) result.fallbacks.push(key);
+      loaded++;
+      onProgress?.(loaded, total);
+      resolve();
+    };
+    loader.load(
+      `/textures/${FILES[key]}`,
+      (tex) => finish(tex, false),
       undefined,
-      undefined,
-      () => {
-        tex.image = fallbackFor(url);
-        tex.needsUpdate = true;
-      },
+      () => finish(makeProceduralTexture(key, key === 'stars' ? 2048 : 1024, key === 'stars' ? 1024 : 512), true),
     );
-    if (srgb) tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = aniso ? maxAniso : 1;
-    tex.wrapS = THREE.RepeatWrapping;
-    return tex;
-  }
-
-  return { load, manager };
+  }));
+  return Promise.all(tasks).then(() => result);
 }

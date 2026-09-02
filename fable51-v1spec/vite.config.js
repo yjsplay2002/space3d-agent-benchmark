@@ -1,11 +1,9 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/',
   build: {
     outDir: 'dist',
-    target: 'es2022',
+    target: 'es2020',
     chunkSizeWarningLimit: 1500,
   },
-  server: { host: true },
 });

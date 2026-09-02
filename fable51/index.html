@@ -5,10 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#000005" />
     <title>우리 태양계 탐험 — Space3D</title>
-    <meta name="description" content="어린이를 위한 3D 태양계 시뮬레이터. 행성을 클릭해 우주를 탐험해 보세요." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>" />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <canvas id="scene"></canvas>
+      <div id="labels"></div>
+
+      <!-- 로딩 화면 -->
+      <div id="loading">
+        <div class="loading-inner">
+          <div class="loading-title">우리 태양계 탐험</div>
+          <div class="loading-sub">우주선 시스템 준비 중</div>
+          <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
+          <div class="loading-pct" id="loading-pct">0%</div>
+        </div>
+      </div>
+
+      <!-- 좌상단 타이틀 -->
+      <header id="hud-title">
+        <h1>우리 태양계 탐험</h1>
+        <p class="hint">행성을 클릭해 보세요 · 휠로 확대 · 드래그로 회전</p>
+        <p class="scale-note">⚠ 실제 비율 아님 — 크기 비율은 유지, 거리는 압축했어요</p>
+      </header>
+
+      <!-- 우측 정보 패널 -->
+      <aside id="panel" class="hidden" aria-live="polite">
+        <button id="panel-close" class="icon-btn" title="닫기 (ESC)">✕</button>
+        <div class="panel-head">
+          <div class="panel-emoji" id="panel-emoji">🪐</div>
+          <div>
+            <div class="panel-name" id="panel-name">행성</div>
+            <div class="panel-en" id="panel-en">Planet</div>
+            <div class="panel-type" id="panel-type">유형</div>
+          </div>
+        </div>
+        <div class="panel-section" id="panel-moon-why" hidden>
+          <div class="section-title">지금 달이 이렇게 보이는 이유</div>
+          <p id="panel-moon-why-text"></p>
+        </div>
+        <div class="panel-section">
+          <div class="section-title">데이터</div>
+          <table class="stats" id="panel-stats"></table>
+        </div>
+        <div class="panel-section">
+          <div class="section-title">재미있는 사실</div>
+          <ul class="facts" id="panel-facts"></ul>
+        </div>
+        <div class="panel-section">
+          <div class="section-title">움직이는 방향</div>
+          <p class="direction" id="panel-direction"></p>
+        </div>
+      </aside>
+
+      <!-- 달 관측 인셋 (항상 표시) -->
+      <section id="moon-inset" title="지구에서 보는 달">
+        <div class="inset-title">🌙 오늘 밤 지구에서 보는 달</div>
+        <div class="inset-body">
+          <canvas id="moon-canvas" width="256" height="256"></canvas>
+          <div class="inset-data">
+            <div class="inset-phase" id="moon-phase-name">보름달</div>
+            <div class="inset-row"><span>조명률</span><b id="moon-illum">100%</b></div>
+            <div class="inset-row"><span>월령</span><b id="moon-age">14.8일</b></div>
+            <div class="inset-row"><span>다음 보름까지</span><b id="moon-next-full">29일</b></div>
+          </div>
+        </div>
+        <div class="inset-foot" id="moon-sun-dir">☀ 밝은 쪽이 태양 방향이에요</div>
+      </section>
+
+      <!-- 하단 시간 바 -->
+      <footer id="timebar">
+        <div class="tb-group tb-date">
+          <button class="tb-btn" id="btn-prev-day" title="하루 전 (←)">◀ 하루 전</button>
+          <div class="date-display" id="date-display">2026년 1월 1일</div>
+          <button class="tb-btn" id="btn-next-day" title="하루 후 (→)">하루 후 ▶</button>
+          <button class="tb-btn accent" id="btn-today" title="오늘로">오늘</button>
+        </div>
+        <div class="tb-group tb-play">
+          <button class="tb-btn play" id="btn-play" title="일시정지/재생 (Space)">❚❚</button>
+          <input type="range" id="speed" min="0" max="1000" value="333" step="1" aria-label="속도" />
+          <div class="speed-readout" id="speed-readout">1x</div>
+        </div>
+        <div class="tb-group tb-right">
+          <button class="tb-btn" id="btn-overview" title="전체 보기 (ESC)">⌂ 전체 보기</button>
+        </div>
+      </footer>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

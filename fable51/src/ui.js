@@ -1,236 +1,216 @@
-// HUD: 타이틀, 안내, 시간 컨트롤, 정보 패널, 로딩 화면
+// ui.js — 정보 패널, 시간/날짜 컨트롤, 라벨, 로딩
+import * as THREE from 'three';
+import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { formatKoreanDate, isSameLocalDay } from './ephemeris.js';
 
-const SUP = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
-const sup = (n) => String(n).split('').map((c) => SUP[c] ?? c).join('');
-const fmtInt = (n) => Math.round(n).toLocaleString('ko-KR');
+const $ = (id) => document.getElementById(id);
 
-// km → "1억 4,960만 km" 형식
-export function fmtKm(km) {
-  km = Math.max(0, Math.round(km));
-  const eok = Math.floor(km / 1e8);
-  const man = Math.floor((km % 1e8) / 1e4);
-  const rest = km % 1e4;
-  const parts = [];
-  if (eok) parts.push(`${fmtInt(eok)}억`);
-  if (man) parts.push(`${fmtInt(man)}만`);
-  if (rest || parts.length === 0) parts.push(fmtInt(rest));
-  return parts.join(' ') + ' km';
+// 슬라이더 0~1000 ↔ 배속 0.1x~1000x (로그)
+export function sliderToSpeed(v) { return Math.pow(10, (v / 1000) * 4 - 1); }
+export function speedToSlider(s) { return ((Math.log10(s) + 1) / 4) * 1000; }
+
+function speedLabel(speed) {
+  // 1x = 1초에 1시간
+  const hoursPerSec = speed;
+  let desc;
+  if (hoursPerSec < 1) desc = `1초 = ${Math.round(hoursPerSec * 60)}분`;
+  else if (hoursPerSec < 24) desc = `1초 = ${hoursPerSec.toFixed(hoursPerSec < 10 ? 1 : 0)}시간`;
+  else desc = `1초 = ${(hoursPerSec / 24).toFixed(hoursPerSec / 24 < 10 ? 1 : 0)}일`;
+  const sp = speed < 1 ? speed.toFixed(1) : speed < 10 ? speed.toFixed(1) : Math.round(speed);
+  return `${sp}x<small>${desc}</small>`;
 }
 
-function buildStats(d) {
-  const rows = [];
-  rows.push({ k: '지름', value: d.diameterKm, fmt: (v) => `${fmtInt(v)} km` });
-  rows.push({ k: '질량', value: d.mass[0], fmt: (v) => `${v.toFixed(2)} × 10${sup(d.mass[1])} kg` });
-  if (d.distance > 0) {
-    rows.push({
-      k: d.distanceLabel || '태양까지 거리',
-      value: d.distance * 1e6,
-      fmt: (v) => fmtKm(v),
-    });
-  }
-  if (d.orbitDays > 0) {
-    rows.push({
-      k: d.parent ? '공전 주기 (지구 기준)' : '공전 주기',
-      value: d.orbitDays,
-      fmt: (v) => {
-        if (d.orbitDays < 1000) {
-          const yrs = d.orbitDays >= 360 && d.orbitDays <= 370 ? ' (1년)' : '';
-          return `${v.toFixed(d.orbitDays < 100 ? 1 : 0)}일${yrs}`;
-        }
-        return `${(v / 365.25).toFixed(1)}년`;
-      },
-    });
-  }
-  rows.push({
-    k: '자전 주기',
-    value: Math.abs(d.rotationHours),
-    fmt: (v) => {
-      const retro = d.rotationHours < 0 ? ' (역자전)' : '';
-      if (Math.abs(d.rotationHours) < 48) return `${v.toFixed(1)}시간${retro}`;
-      return `${(v / 24).toFixed(Math.abs(d.rotationHours) / 24 < 100 ? 1 : 0)}일${retro}`;
-    },
-  });
-  rows.push({ k: '평균 온도', value: d.tempC, fmt: (v) => `${Math.round(v)}°C` });
-  rows.push({ k: '위성 수', value: d.moons, fmt: (v) => `${Math.round(v)}개` });
-  rows.push({ k: '중력', value: d.gravity, fmt: (v) => `${v.toFixed(2)}<small>(지구=1)</small>` });
-  rows.push({ k: '자전축 기울기', value: d.tiltDeg, fmt: (v) => `${v.toFixed(1)}°` });
-  return rows;
+const WHY_TEXT = [
+  '달이 태양과 지구 사이에 있어요. 태양빛을 받는 밝은 면이 태양 쪽을 향하고 있어서, 지구에서는 어두운 면만 보여요. 그래서 달이 거의 보이지 않아요.',
+  '달이 태양에서 조금 동쪽으로 벗어났어요. 밝은 면의 오른쪽 가장자리만 살짝 보여서 가느다란 초승달이에요. 해 진 뒤 서쪽 하늘에서 찾아보세요.',
+  '달이 태양에서 90° 떨어져 있어요. 밝은 반구의 절반이 보이니까 오른쪽 반이 밝은 반달이에요. 저녁에 남쪽 하늘 높이 떠 있어요.',
+  '달이 태양의 반대편에 가까워지고 있어요. 밝은 면이 대부분 보여서 볼록해요. 며칠 뒤면 보름달이 돼요.',
+  '지구가 태양과 달 사이에 있어요. 태양빛을 받는 면 전체가 지구를 향해서 둥근 보름달로 보여요. 해가 질 때 동쪽에서 떠올라 밤새 보여요.',
+  '보름이 지나 달이 다시 태양 쪽으로 다가가고 있어요. 밝은 면의 왼쪽이 보이며 조금씩 기울어요. 밤늦게 떠서 아침 하늘에도 남아 있어요.',
+  '달이 태양에서 다시 90° 떨어진 위치예요. 이번엔 왼쪽 반이 밝은 반달이에요. 한밤중에 떠서 새벽 남쪽 하늘에 있어요.',
+  '달이 태양 바로 앞으로 돌아가는 중이에요. 왼쪽 가장자리만 가늘게 밝아요. 해 뜨기 전 동쪽 하늘에서 볼 수 있어요.',
+];
+
+export function moonWhyText(phase) {
+  const base = WHY_TEXT[phase.index];
+  return `${base} 지금 태양-지구-달 각도(위상각)는 ${phase.angle.toFixed(0)}°, 밝게 보이는 부분은 ${(phase.illumination * 100).toFixed(0)}%예요.`;
 }
 
-const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+function formatNumber(v, digits) {
+  return v.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
 
-export function createUI({ onPlayToggle, onSpeedChange, onOverview, onClosePanel }) {
-  const app = document.getElementById('app');
+export function createUI({ bodies, callbacks }) {
+  const dom = {
+    loading: $('loading'), loadingFill: $('loading-fill'), loadingPct: $('loading-pct'),
+    panel: $('panel'), panelClose: $('panel-close'), panelEmoji: $('panel-emoji'), panelName: $('panel-name'),
+    panelEn: $('panel-en'), panelType: $('panel-type'), panelStats: $('panel-stats'), panelFacts: $('panel-facts'),
+    panelDirection: $('panel-direction'), panelMoonWhy: $('panel-moon-why'), panelMoonWhyText: $('panel-moon-why-text'),
+    dateDisplay: $('date-display'), btnPrev: $('btn-prev-day'), btnNext: $('btn-next-day'), btnToday: $('btn-today'),
+    btnPlay: $('btn-play'), speed: $('speed'), speedReadout: $('speed-readout'), btnOverview: $('btn-overview'),
+  };
 
-  // ---------- 로딩 ----------
-  const loading = document.createElement('div');
-  loading.className = 'loading';
-  loading.innerHTML = `
-    <div class="ring"></div>
-    <div class="l-title">Space3D</div>
-    <div class="l-sub">우리 태양계 탐험</div>
-    <div class="bar"><i></i></div>
-    <div class="pct">텍스처 불러오는 중 · 0%</div>
-  `;
-  document.body.appendChild(loading);
-  const bar = loading.querySelector('.bar i');
-  const pct = loading.querySelector('.pct');
-
-  // ---------- HUD ----------
-  const hud = document.createElement('div');
-  hud.className = 'hud';
-  hud.innerHTML = `
-    <i class="hud-corner tl"></i><i class="hud-corner tr"></i><i class="hud-corner bl"></i><i class="hud-corner br"></i>
-    <div class="title-block">
-      <div class="eyebrow">Solar System · Explorer</div>
-      <h1>우리 태양계 탐험</h1>
-      <div class="hint"><b>행성을 클릭</b>해 보세요 · 휠로 확대/축소 · ESC로 돌아가기</div>
-    </div>
-    <div class="scale-note">실제 비율 아님 · 크기·거리는 교육용으로 압축됨</div>
-    <button class="btn overview-btn" type="button">◀ 전체 보기</button>
-    <div class="timebar">
-      <button class="play" type="button" aria-label="일시정지/재생">
-        <svg viewBox="0 0 16 16" class="ic-pause"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg>
-        <svg viewBox="0 0 16 16" class="ic-play" style="display:none"><path d="M4 2 L14 8 L4 14 Z"/></svg>
-      </button>
-      <div class="speed-wrap">
-        <div class="speed-head"><span>시간 속도</span><span class="val">×1</span></div>
-        <input class="speed" type="range" min="0" max="1000" value="0" />
-      </div>
-      <div class="clock"><b>0일</b><span>1초 = 1일</span></div>
-    </div>
-    <aside class="panel" aria-live="polite">
-      <button class="close" type="button" aria-label="닫기">✕</button>
-      <div class="p-body"></div>
-    </aside>
-  `;
-  app.appendChild(hud);
-
-  const overviewBtn = hud.querySelector('.overview-btn');
-  const playBtn = hud.querySelector('.play');
-  const icPause = hud.querySelector('.ic-pause');
-  const icPlay = hud.querySelector('.ic-play');
-  const speedInput = hud.querySelector('input.speed');
-  const speedVal = hud.querySelector('.speed-head .val');
-  const clock = hud.querySelector('.clock');
-  const panel = hud.querySelector('.panel');
-  const panelBody = hud.querySelector('.p-body');
-  const closeBtn = hud.querySelector('.panel .close');
-
-  // 속도: 슬라이더 0..1000 → 10^(-1 .. 3) = 0.1x .. 1000x (1x = 하루/초)
-  const sliderToSpeed = (v) => Math.pow(10, -1 + (v / 1000) * 4);
-  const speedToSlider = (s) => ((Math.log10(s) + 1) / 4) * 1000;
-
-  function fmtSpeed(s) {
-    if (s >= 100) return `×${Math.round(s)}`;
-    if (s >= 10) return `×${s.toFixed(0)}`;
-    return `×${s.toFixed(1)}`;
+  // ---- 라벨
+  const labels = new Map();
+  let hoverId = null, activeId = null;
+  for (const b of bodies.list) {
+    const el = document.createElement('div');
+    el.className = 'body-label' + (b.id === 'moon' ? ' moon-label' : '');
+    el.textContent = b.data.name;
+    el.style.setProperty('--c', b.data.color);
+    el.addEventListener('pointerdown', (e) => e.stopPropagation());
+    el.addEventListener('click', (e) => { e.stopPropagation(); callbacks.onSelect(b.id); });
+    el.addEventListener('pointerenter', () => callbacks.onHover?.(b.id));
+    el.addEventListener('pointerleave', () => callbacks.onHover?.(null));
+    const obj = new CSS2DObject(el);
+    obj.position.set(0, b.radius * 1.25, 0);
+    obj.center.set(0.5, 1);
+    b.group.add(obj);
+    labels.set(b.id, { obj, el, body: b });
+  }
+  const _v = new THREE.Vector3();
+  function updateLabels(camera) {
+    for (const { obj, el, body } of labels.values()) {
+      const d = body.worldPosition(_v).distanceTo(camera.position);
+      let o = 1;
+      const near = body.radius * 3.2;
+      if (d < near) o = Math.max(0, (d - body.radius * 1.2) / (near - body.radius * 1.2));
+      if (body.id === 'moon' && d > 90) o = Math.max(0, 1 - (d - 90) / 40);
+      if (d > 700) o *= Math.max(0.35, 1 - (d - 700) / 600);
+      el.style.opacity = o.toFixed(2);
+      el.style.pointerEvents = o < 0.1 ? 'none' : 'auto';
+      obj.visible = o > 0.02;
+    }
+  }
+  function setHover(id) {
+    if (hoverId && labels.get(hoverId)) labels.get(hoverId).el.classList.remove('hover');
+    hoverId = id;
+    if (id && labels.get(id)) labels.get(id).el.classList.add('hover');
+    document.body.style.cursor = id ? 'pointer' : '';
+  }
+  function setActive(id) {
+    if (activeId && labels.get(activeId)) labels.get(activeId).el.classList.remove('active');
+    activeId = id;
+    if (id && labels.get(id)) labels.get(id).el.classList.add('active');
   }
 
-  function setSpeed(s) {
-    speedInput.value = String(speedToSlider(s));
-    speedInput.style.setProperty('--pct', `${speedToSlider(s) / 10}%`);
-    speedVal.textContent = fmtSpeed(s);
-    const sub = s >= 1 ? `1초 = ${s < 10 ? s.toFixed(1) : Math.round(s)}일` : `1초 = ${(s * 24).toFixed(1)}시간`;
-    clock.querySelector('span').textContent = sub;
-  }
+  // ---- 정보 패널
+  let countUpTimers = [];
+  function showPanel(body, { moonPhase } = {}) {
+    for (const t of countUpTimers) cancelAnimationFrame(t);
+    countUpTimers = [];
+    const d = body.data;
+    dom.panelEmoji.textContent = d.emoji;
+    dom.panelName.textContent = d.name;
+    dom.panelEn.textContent = d.nameEn;
+    dom.panelType.textContent = d.type;
+    dom.panel.style.setProperty('--c', d.color);
+    dom.panelEmoji.style.boxShadow = `0 0 22px ${d.color}55`;
 
-  speedInput.addEventListener('input', () => {
-    const s = sliderToSpeed(Number(speedInput.value));
-    setSpeed(s);
-    onSpeedChange?.(s);
+    // 수치 테이블 (stagger + 카운트업)
+    dom.panelStats.innerHTML = '';
+    d.stats.forEach((s, i) => {
+      const tr = document.createElement('tr');
+      tr.className = 'materialize';
+      tr.style.animationDelay = `${120 + i * 70}ms`;
+      const td1 = document.createElement('td'); td1.textContent = s.label;
+      const td2 = document.createElement('td');
+      const val = document.createElement('span'); val.className = 'val'; val.textContent = formatNumber(0, s.digits);
+      const unit = document.createElement('span'); unit.className = 'unit'; unit.textContent = s.unit;
+      td2.append(val, unit);
+      tr.append(td1, td2);
+      dom.panelStats.appendChild(tr);
+      // 카운트업
+      const start = performance.now() + 120 + i * 70, dur = 900;
+      const tick = (now) => {
+        const t = Math.min(1, Math.max(0, (now - start) / dur));
+        const k = 1 - Math.pow(1 - t, 3);
+        val.textContent = formatNumber(s.value * k, s.digits);
+        if (t < 1) countUpTimers.push(requestAnimationFrame(tick));
+      };
+      countUpTimers.push(requestAnimationFrame(tick));
+    });
+
+    dom.panelFacts.innerHTML = '';
+    d.facts.forEach((f, i) => {
+      const li = document.createElement('li');
+      li.className = 'materialize';
+      li.style.animationDelay = `${700 + i * 110}ms`;
+      li.textContent = f;
+      dom.panelFacts.appendChild(li);
+    });
+    dom.panelDirection.textContent = d.direction;
+    dom.panelDirection.className = 'direction materialize';
+    dom.panelDirection.style.animationDelay = '1150ms';
+
+    if (body.id === 'moon' && moonPhase) {
+      dom.panelMoonWhy.hidden = false;
+      dom.panelMoonWhy.className = 'panel-section materialize';
+      dom.panelMoonWhy.style.animationDelay = '60ms';
+      dom.panelMoonWhyText.textContent = moonWhyText(moonPhase);
+    } else {
+      dom.panelMoonWhy.hidden = true;
+    }
+    dom.panel.classList.remove('hidden');
+    dom.panel.scrollTop = 0;
+  }
+  function updatePanelMoon(phase) {
+    if (!dom.panelMoonWhy.hidden) dom.panelMoonWhyText.textContent = moonWhyText(phase);
+  }
+  function hidePanel() { dom.panel.classList.add('hidden'); }
+  dom.panelClose.addEventListener('click', () => callbacks.onOverview());
+
+  // ---- 시간/날짜 컨트롤
+  dom.btnPrev.addEventListener('click', () => callbacks.onPrevDay());
+  dom.btnNext.addEventListener('click', () => callbacks.onNextDay());
+  dom.btnToday.addEventListener('click', () => callbacks.onToday());
+  dom.btnPlay.addEventListener('click', () => callbacks.onTogglePlay());
+  dom.btnOverview.addEventListener('click', () => callbacks.onOverview());
+  dom.speed.addEventListener('input', () => {
+    callbacks.onSpeed(sliderToSpeed(Number(dom.speed.value)));
   });
-
-  function setPlaying(p) {
-    icPause.style.display = p ? '' : 'none';
-    icPlay.style.display = p ? 'none' : '';
-  }
-  playBtn.addEventListener('click', () => {
-    onPlayToggle?.();
-  });
-
-  overviewBtn.addEventListener('click', () => onOverview?.());
-  closeBtn.addEventListener('click', () => onClosePanel?.());
-
-  function setClock(days) {
-    const y = Math.floor(days / 365.25);
-    const d = Math.floor(days - y * 365.25);
-    clock.querySelector('b').textContent = y > 0 ? `${fmtInt(y)}년 ${d}일 경과` : `${d}일 경과`;
+  dom.speed.addEventListener('change', () => dom.speed.blur());
+  for (const b of [dom.btnPrev, dom.btnNext, dom.btnToday, dom.btnPlay, dom.btnOverview, dom.panelClose]) {
+    b.addEventListener('click', () => b.blur());
   }
 
-  // ---------- 정보 패널 ----------
-  let countRaf = 0;
-  function showPanel(data) {
-    cancelAnimationFrame(countRaf);
-    const stats = buildStats(data);
-    let i = 0;
-    const delay = () => `--d:${(0.08 + i++ * 0.06).toFixed(2)}s`;
-    panelBody.innerHTML = `
-      <div class="p-head mat" style="${delay()}">
-        <div class="p-emoji">${data.emoji}</div>
-        <div>
-          <div class="p-type">${data.type}</div>
-          <h2 class="p-name">${data.name}</h2>
-          <div class="p-en">${data.en}</div>
-        </div>
-      </div>
-      <div class="sect mat" style="${delay()}">데이터</div>
-      <div class="stats">
-        ${stats
-          .map(
-            (s) => `<div class="stat mat" style="${delay()}"><span class="k">${s.k}</span><span class="v" data-i>—</span></div>`,
-          )
-          .join('')}
-      </div>
-      <div class="sect mat" style="${delay()}">재미있는 사실</div>
-      <ul class="facts">
-        ${data.facts.map((f) => `<li class="mat" style="${delay()}">${f}</li>`).join('')}
-      </ul>
-      <div class="sect mat" style="${delay()}">자전 · 공전</div>
-      <div class="spin-line mat" style="${delay()}">${data.spin}</div>
-    `;
-    panel.classList.add('open');
-    overviewBtn.classList.add('show');
-    panel.scrollTop = 0;
-
-    // 숫자 카운트업
-    const cells = panelBody.querySelectorAll('.stat .v');
-    const start = performance.now();
-    const dur = 1100;
-    const tick = (now) => {
-      let done = true;
-      cells.forEach((cell, idx) => {
-        const s = stats[idx];
-        const t = Math.min(1, Math.max(0, (now - start - 120 - idx * 60) / dur));
-        if (t < 1) done = false;
-        const v = s.value * easeOut(t);
-        cell.innerHTML = s.fmt(v);
-      });
-      if (!done) countRaf = requestAnimationFrame(tick);
-    };
-    countRaf = requestAnimationFrame(tick);
+  let lastDateText = '';
+  const insetTitle = document.querySelector('#moon-inset .inset-title');
+  function setDate(jd, flash = false) {
+    const text = formatKoreanDate(jd);
+    if (text !== lastDateText) {
+      dom.dateDisplay.textContent = text;
+      lastDateText = text;
+      const today = isSameLocalDay(jd);
+      dom.btnToday.classList.toggle('accent', !today);
+      if (insetTitle) insetTitle.textContent = today ? '🌙 오늘 밤 지구에서 보는 달' : `🌙 ${text} 밤 지구에서 보는 달`;
+    }
+    if (flash) {
+      dom.dateDisplay.classList.remove('flash');
+      void dom.dateDisplay.offsetWidth;
+      dom.dateDisplay.classList.add('flash');
+    }
+  }
+  function setPlaying(p) { dom.btnPlay.textContent = p ? '❚❚' : '▶'; dom.btnPlay.title = p ? '일시정지 (Space)' : '재생 (Space)'; }
+  function setSpeed(speed) {
+    dom.speed.value = String(Math.round(speedToSlider(speed)));
+    dom.speedReadout.innerHTML = speedLabel(speed);
   }
 
-  function hidePanel() {
-    cancelAnimationFrame(countRaf);
-    panel.classList.remove('open');
-    overviewBtn.classList.remove('show');
+  // ---- 로딩
+  function setLoading(loaded, total) {
+    const pct = Math.round((loaded / total) * 100);
+    dom.loadingFill.style.width = `${pct}%`;
+    dom.loadingPct.textContent = `${pct}%`;
+  }
+  function hideLoading() {
+    dom.loading.classList.add('done');
+    setTimeout(() => dom.loading.remove(), 1200);
   }
 
-  // ---------- 로딩 ----------
-  function setProgress(p) {
-    const v = Math.round(p * 100);
-    bar.style.width = `${v}%`;
-    pct.textContent = `텍스처 불러오는 중 · ${v}%`;
-  }
-  function finishLoading() {
-    bar.style.width = '100%';
-    pct.textContent = '준비 완료';
-    setTimeout(() => loading.classList.add('done'), 350);
-    setTimeout(() => loading.remove(), 1600);
-  }
-
-  setPlaying(true);
-
-  return { setProgress, finishLoading, showPanel, hidePanel, setPlaying, setSpeed, setClock, panel, hud };
+  return {
+    labels, updateLabels, setHover, setActive, showPanel, hidePanel, updatePanelMoon,
+    setDate, setPlaying, setSpeed, setLoading, hideLoading,
+    moonDom: { name: $('moon-phase-name'), illum: $('moon-illum'), age: $('moon-age'), nextFull: $('moon-next-full'), sunDir: $('moon-sun-dir') },
+  };
 }

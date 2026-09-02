@@ -104,6 +104,12 @@
       "cli": "grok",
       "model": "grok-4.5",
       "effort": "high"
+    },
+    {
+      "id": "claude-fable51-high",
+      "cli": "claude",
+      "model": "claude-fable-5-1",
+      "effort": "high"
     }
   ],
   "_agy_note": [
@@ -124,5 +130,9 @@
     "매 시도는 처음부터가 아니라 이전 세션을 resume 하므로 작업이 누적된다.",
     "실패한 검증 출력이 다음 시도의 프롬프트로 그대로 전달된다.",
     "wall_sec 는 모든 시도의 합계 = '완료까지 실제로 걸린 시간'."
+  ],
+  "_rerun_2026_09_02": [
+    "claude-fable51-high: 원본 하네스 스크립트가 없는 PC라 harness/run_benchmark.py 로 재구성해 실행 (같은 bench.json 의미론).",
+    "실행: python harness/run_benchmark.py --config bench.json --contestant claude-fable51-high"
   ]
 }

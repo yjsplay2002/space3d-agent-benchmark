@@ -1,0 +1,49 @@
+{
+  "task_id": "2026-07-27-space3d-moon",
+  "contestant": {
+    "id": "claude-fable51-high",
+    "cli": "claude",
+    "model": "claude-fable-5-1",
+    "effort": "high"
+  },
+  "started_at": "2026-09-02T04:36:41.378014+00:00",
+  "env": {
+    "os": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.5",
+    "claude_cli": "2.1.258 (Claude Code)",
+    "node": "v22.22.3",
+    "verify_shell": "C:\\Program Files\\Git\\bin\\bash.exe",
+    "npm": "10.9.8",
+    "isolation": "--safe-mode",
+    "flags": "-p --effort high --safe-mode --dangerously-skip-permissions --output-format json"
+  },
+  "dry": false,
+  "finished_at": "2026-09-02T05:28:03.825085+00:00",
+  "harness_wall_sec": 3082.0,
+  "totals": {
+    "wall_sec": 3070.6,
+    "wall_min": 51.2,
+    "attempts": 1,
+    "turns": 94,
+    "input_tokens": 5114,
+    "cache_creation_input_tokens": 245193,
+    "cache_read_input_tokens": 7325383,
+    "output_tokens": 154024,
+    "cost_usd": 18.3322,
+    "noncache_tokens": 404331,
+    "total_tokens": 7729714,
+    "noncache_ratio": 0.0523
+  },
+  "verify": {
+    "passed": 10,
+    "total": 10,
+    "critical_failed": []
+  },
+  "completed": true,
+  "loc": {
+    "lines": 2908,
+    "files": 16,
+    "rule": "src/scripts/index.html 등 .js/.css/.html/.json (package-lock, public, dist, node_modules 제외)"
+  },
+  "session_id": "4d5ff3e5-2f70-4b19-a5d6-e20c4f3a1129"
+}
